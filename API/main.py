@@ -44,7 +44,7 @@ def signup():
             cur.execute("SET SEARCH_PATH TO travelly;")
             cur.execute('''INSERT INTO tr_users VALUES (''' + ','.join(['%s' for val in data_values]) + ''');''', data_values)
             conn.commit()
-            return jsonify(status='authed')
+            return jsonify(status='successful')
         except psycopg2.IntegrityError as e:
             err_resp = error_handler(e)
             return jsonify(status = 'unsuccessful', error=err_resp)

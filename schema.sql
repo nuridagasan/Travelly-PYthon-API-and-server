@@ -9,6 +9,7 @@ CREATE TABLE tr_users (
     email        VARCHAR(256) NOT NULL UNIQUE,
     dob          DATE NOT NULL,
     password 	 VARCHAR(64) NOT NULL,	
+    salt         VARCHAR(64) NOT NULL,
 		 CONSTRAINT user_pk PRIMARY KEY (username));
 
 CREATE TABLE tr_session (

@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, url_for, redirect, session, render_template
+from flask import Flask, jsonify, request, url_for, redirect, session, render_template, make_response, redirect, render_template
 import re
 import random
 from psycopg2.extensions import AsIs
@@ -15,7 +15,7 @@ app.config['SECRET_KEY'] = 'Thisisasecret!'
 
 
 def getcon():
-    connStr = "host='localhost' user='postgres' dbname='travelly' password=12345"
+    connStr = "host='localhost' user='postgres' dbname='Travelly' password=password"
     conn=psycopg2.connect(connStr) 
     return conn
 
@@ -73,7 +73,11 @@ def get_password_from_db(username):
         return password
     except Exception as e:
         print(e)
-        
+
+@app.route('/')
+def home():
+    return 'hello'
+
 @app.route('/login')
 def get_login():   
     return render_template('login.html')
@@ -96,9 +100,9 @@ def post_login():
                 cur.execute(search_path)
                 cur.execute("""DELETE FROM %s WHERE username = %s""",[AsIs('tr_session'), data['username']])
                 cur.execute("""INSERT INTO %s VALUES(%s,%s,%s);""", [AsIs('tr_session'), sessionID, data['username'], str(expire)])
-                resp = jsonify(status='success')
+                resp = make_response(redirect('/'))
                 resp.set_cookie('sessionID', sessionID)
-                return render_template('login.html', check_input = 'Login Successful!')
+                return resp
             else:
                 return render_template('login.html', check_input = 'Incorrect username or password')
         else:

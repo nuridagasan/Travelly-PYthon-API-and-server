@@ -35,15 +35,15 @@ def error_handler(err):
     print ("pgerror:", err.pgerror)
     print ("pgcode:", err.pgcode, "\n")
 
-def check_if_record_exists(table, column, string):
-    try:
-        conn = getcon()
-        cur = conn.cursor()
-        cur.execute(search_path)
-        cur.execute("""SELECT %s FROM %s WHERE %s = %s;""", [AsIs(column), AsIs(table), AsIs(column), string])
-        return cur.fetchone() is not None
-    except Exception as e:
-        print(e)
+#def check_if_record_exists(table, column, string):
+    #try:
+     #   conn = getcon()
+     #   cur = conn.cursor()
+      #  cur.execute(search_path)
+       # cur.execute("""SELECT %s FROM %s WHERE %s = %s;""", [AsIs(column), AsIs(table), AsIs(column), string])
+        #return cur.fetchone() is not None
+    #except Exception as e:
+     #   print(e)
 
 def insert_sessionID(sessionID, column, username):
     expire = datetime.datetime.now() + datetime.timedelta(hours=2)
@@ -58,8 +58,8 @@ def get_salt_from_db(username):
         conn = getcon()
         cur = conn.cursor()
         cur.execute(search_path)
-        cur.execute("SELECT salt FROM tr_users WHERE username = %s;", [username])
-        return cur.fetchone()[0]
+        cur.execute("SELECT coalesce(min(salt),'1') FROM tr_users WHERE username = %s;", [username]) #using min here means 1 row will be sent back even if there is no salt (then it will send back a row saying null)
+        return cur.fetchone()[0]                                                                     # this keeps the time exactly the same whether there is salt or not. Coalesce stops it from returning NULL for line 94.  
     except Exception as e:
         error_handler(e)
 
@@ -90,21 +90,25 @@ def post_login():
     }
     expire = datetime.datetime.now() + datetime.timedelta(hours=2)
     try:
-        if(check_if_record_exists('tr_users', 'username', data['username'])):
-            user_input_password = pw_hash_salt(data['password'], int(get_salt_from_db(data['username'])))
-            user_stored_password = get_password_from_db(data['username'])[0]
-            if (str(user_input_password) == str(user_stored_password)):
-                sessionID = createRandomId()
-                conn = getcon()
-                cur = conn.cursor()
-                cur.execute(search_path)
-                cur.execute("""DELETE FROM %s WHERE username = %s""",[AsIs('tr_session'), data['username']])
-                cur.execute("""INSERT INTO %s VALUES(%s,%s,%s);""", [AsIs('tr_session'), sessionID, data['username'], str(expire)])
-                resp = make_response(redirect('/'))
-                resp.set_cookie('sessionID', sessionID)
-                return resp
-            else:
-                return render_template('login.html', check_input = 'Incorrect username or password')
+       sql= "SELECT count(*) from tr_users WHERE username =%s and password= %s"  #The count sends back 0 or 1 as a result, depending on whether the pw and username are correct 
+        user_input_password = pw_hash_salt(data['password'], int(get_salt_from_db(data['username'])))
+        query_data = (data['username'], str(user_input_password))
+        conn = getcon()
+        cur = conn.cursor()
+        cur.execute(search_path)
+        cur.execute(sql, query_data)
+        check_account = cur.fetchone()[0]
+        # if there is a result, the pw and username were correct 
+        if check_account != 0:
+            sessionID = createRandomId()
+            conn = getcon()
+            cur = conn.cursor()
+            cur.execute(search_path)
+            cur.execute("""DELETE FROM %s WHERE username = %s""",[AsIs('tr_session'), data['username']])
+            cur.execute("""INSERT INTO %s VALUES(%s,%s,%s);""", [AsIs('tr_session'), sessionID, data['username'], str(expire)])
+            resp = make_response(redirect('/'))
+            resp.set_cookie('sessionID', sessionID)
+            return resp
         else:
             return render_template('login.html', check_input = 'Incorrect username or password')
     except Exception as e:
@@ -166,10 +170,12 @@ def input_validation(user_sign_up):
 def pw_salt():
     random_digits = '''abcdeg_+]|,./;:>'''
     pw_salt=''
-    for i in range(len(random_digits)):
+    i = 0 
+   while i <= len(random_digits):
         random_digit = random.choice(random_digits)
         pw_salt += str(ord(random_digit))
-    return int(pw_salt)
+        i +=1 
+    return int(pw_salt) # The salt is a VARCHAR in the db at the moment so we can change the schema 
 
 def pw_hash_salt(unhashed_pw,pw_salt=0):
     num = 31
@@ -182,9 +188,11 @@ def pw_hash_salt(unhashed_pw,pw_salt=0):
 def createRandomId():
     random_digits = 'abcdefghijklmnopABCDEFGHIJKLMNOP123456789'
     sess_id=''
-    for i in range(len(random_digits)):
+    i = 0 
+    while i<= len(random_digits):
         random_digit = random.choice(random_digits)
         sess_id += random_digit
+        i +=1 
     return sess_id
 
 

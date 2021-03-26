@@ -1,0 +1,102 @@
+body { 
+    background: url("https://images.unsplash.com/photo-1472991735047-84ec55579757?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=2689&q=80") no-repeat center center fixed; 
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    background-size: cover;
+  }
+
+.signup-button{
+    background: #34ad29;
+    width:100%;
+    font-weight: 600;
+    color:#fff;
+    padding: 8px 25px;
+    }
+
+    
+.login-button{
+    color: #fff !important;
+    border: 1px solid #EA4335;
+    background: #e63434 !important;
+    width:100%;
+    font-weight: 600;
+    color:#fff;
+    padding: 8px 25px;
+}
+
+.login-button:hover {
+    color: rgb(0, 0, 0) !important;
+    background: #ff3b3b !important;
+}
+.signup-button:hover {
+    background: #6adad4;
+}
+
+.my-input{
+    box-shadow: inset 0 1px 2px #c5f8ffdc;
+    cursor: text;
+    padding: 8px 10px;
+    transition: border .1s linear;
+}
+    
+.header-title{
+    margin: 5rem 0;
+}
+    
+.signup-title{
+    font-size: 31px;
+    line-height: 40px;
+    font-weight: 600;
+    color:#4c5357;
+}
+
+.logo-title{
+    color: #5e8396;
+    font-size: 21px;
+    line-height: 32px;
+    font-weight: 400;
+}
+
+.login-or {
+    position: relative;
+    color: #aaa;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+.span-or {
+    display: block;
+    position: absolute;
+    left: 50%;
+    top: -2px;
+    margin-left: -25px;
+    background-color: #fff;
+    width: 50px;
+    text-align: center;
+}
+
+.hr-or {
+    height: 1px;
+    margin-top: 0px !important;
+    margin-bottom: 0px !important;
+}
+
+.form-bg{
+        background-color: #fefefe;
+        box-shadow: 5px 5px;
+}
+    
+.font-color {
+    color:rgb(116, 116, 116);
+}
+
+.login-body {
+    background: url("https://images.unsplash.com/photo-1531366936337-7c912a4589a7?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80") no-repeat center center fixed; 
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    background-size: cover;   
+}

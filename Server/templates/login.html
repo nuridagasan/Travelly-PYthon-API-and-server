@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='styles/login.css') }}">
+
+    <title>Document</title>
+</head>
+
+<body class="login-body">
+    <div class="container">
+        <div class="mx-2">
+            <div class="col-md-6 mx-auto text-center">
+                <div class="header-title border border-dark form-bg p-3">
+                    <h1 class="wv-heading--title">
+                        Welcome to TRAVELLY!
+                    </h1>
+                    <h2 class="wv-heading--subtitle">
+                        Login Your Account Now!
+                    </h2>
+                </div>
+            </div>
+            <div class="row">
+                <div class="mx-auto border border-dark p-5 form-bg col-xl-6">
+                    <div class="myform form ">
+                        <form action="/login" method="post" name="login" id="login-form">
+                            <div class="form-group">
+                                <input type="text" name="username" class="form-control my-input" id="user-name"
+                                    placeholder="Username" pattern="[a-zA-Z0-9-]+" required>
+                            </div>
+                            <div class="form-group">
+                                <input type="password" name="password" id="password" class="form-control my-input"
+                                    placeholder="Password" required>
+                                <div>
+                                    <h5 class="text-danger mt-3">{{check_input}}</h5>
+                                </div>
+                                <div class="text-center py-1 ">
+                                    <button type="submit"
+                                        class="btn btn-block btn-lg login-button p-2 mt-3">Login</button>
+                                </div>
+                                <div class="col-md-12 ">
+                                    <div class="login-or">
+                                        <hr class="hr-or">
+                                        <span class="span-or">or</span>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <a class="btn btn-block btn-lg signup-button" href="/signup">
+                                        Create Your Free Account
+                                    </a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

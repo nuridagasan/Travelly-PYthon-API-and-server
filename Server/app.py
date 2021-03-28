@@ -13,6 +13,13 @@ app.config['DEBUG'] = True
 search_path = "SET SEARCH_PATH TO travelly;"
 app.config['SECRET_KEY'] = 'Thisisasecret!'
 
+def createRandomId():
+    random_digits = 'abcdefghijklmnopABCDEFGHIJKLMNOP123456789'
+    sess_id=''
+    for i in range(len(random_digits)):
+        random_digit = random.choice(random_digits)
+        sess_id += random_digit
+    return sess_id
 
 def getcon():
     connStr = "host='localhost' user='postgres' dbname='Travelly' password=password"
@@ -74,16 +81,54 @@ def get_password_from_db(username):
     except Exception as e:
         print(e)
 
+def remove_session(username):
+    conn = getcon()
+    cur = conn.cursor()
+    cur.execute(search_path)
+    cur.execute("""DELETE FROM %s WHERE username = %s""",[AsIs('tr_session'), username])
+    conn.commit()
+    conn.close()
+    return
+
+def insert_session(sid, username, time):
+    conn = getcon()
+    cur = conn.cursor()
+    cur.execute(search_path)
+    cur.execute("""INSERT INTO %s VALUES(%s,%s,%s);""", [AsIs('tr_session'), sid, username, time])
+    conn.commit()
+    print('inserted')
+    return 
+
+def session_auth(cookies):
+    session = cookies.get('sessionID')
+    print(session)
+    if (session):
+        conn = getcon()
+        cur = conn.cursor()
+        cur.execute(search_path)
+        cur.execute("SELECT sid FROM tr_session WHERE sid = %s", [session])
+        resp = cur.fetchone()
+        conn.commit()
+        return True
+    else:
+        return False
+
+
 @app.route('/')
 def home():
     return 'hello'
 
 @app.route('/login')
-def get_login():   
-    return render_template('login.html')
+def get_login(): 
+    session = session_auth(request.cookies)
+    if (session):
+        print('cookie exists')
+        return 'passed'
+    else:
+        return render_template('login.html')
 
 @app.route('/login', methods = ['POST'])
-def post_login():
+def post_login():   
     data = {
             'username' : request.form['username'].lower(),
             'password' : request.form['password']
@@ -95,11 +140,8 @@ def post_login():
             user_stored_password = get_password_from_db(data['username'])[0]
             if (str(user_input_password) == str(user_stored_password)):
                 sessionID = createRandomId()
-                conn = getcon()
-                cur = conn.cursor()
-                cur.execute(search_path)
-                cur.execute("""DELETE FROM %s WHERE username = %s""",[AsIs('tr_session'), data['username']])
-                cur.execute("""INSERT INTO %s VALUES(%s,%s,%s);""", [AsIs('tr_session'), sessionID, data['username'], str(expire)])
+                remove_session(data['username'])
+                insert_session(sessionID, data['username'], str(expire))
                 resp = make_response(redirect('/'))
                 resp.set_cookie('sessionID', sessionID)
                 return resp
@@ -178,14 +220,6 @@ def pw_hash_salt(unhashed_pw,pw_salt=0):
         hashed_pw += ((num * hashed_pw) + ord(unhashed_pw[i]))
     hashed_salted_pw = hashed_pw + pw_salt
     return hashed_salted_pw
-
-def createRandomId():
-    random_digits = 'abcdefghijklmnopABCDEFGHIJKLMNOP123456789'
-    sess_id=''
-    for i in range(len(random_digits)):
-        random_digit = random.choice(random_digits)
-        sess_id += random_digit
-    return sess_id
 
 
 if __name__ == '__main__':

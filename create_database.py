@@ -1,7 +1,7 @@
 import psycopg2
 import datetime
 import random
-
+from psycopg2.extensions import AsIs
 def getConn():
     #pwFile = open("pw.txt", "r")
     #pw = pwFile.read()
@@ -114,26 +114,27 @@ COUNTRIES=[
 'El Salvador', 
 'Namibia'] 
 
+def create_schema(cur):
+    cur.execute(open("schema.sql", "r").read())
 
-
-def create_user(cur, dob,name,salt):
+def create_user(name):
     password='password'
-    username = '%s%s'%(name.split()[0][1].lower(), name.split()[1].lower())
+    username = name.split()[0] + '999'
     email = '%s.%s@email.com'%(name.split()[0][1].lower(), name.split()[1].lower())
-    fname= name.split()[0]
+    firstname= name.split()[0]
     lastname= name.split()[1]
-    sql='SET search_path to travelly; INSERT INTO tr_user (username, firstname,lastname, email, dob, password, salt) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)'
-    data= (username, fname,lastname, email, dob, password, salt)
-    cur.execute(sql,data)
+    dob = datetime.date(1990,1,1)
+    salt = 12345
+    return [username, firstname, lastname, email, dob, password, salt]
+
  
- 
-def create_post(cur, country, author,date):
+def create_post(author, country, unique_id):
+    pid=unique_id
     content = 'Content for this post'
     title = 'post about %s'%(country)
-    date = date + datetime.timedelta( random.randrange(1,3), minutes=random.randrange(1,120), hours=random.randrange(0,6) )
-    sql='SET search_path to travelly; INSERT INTO tr_post ( title, country, author, content,date) VALUES (%s,%s,%s,%s,%s)'
-    data= (title, country, author, content,date)
-    cur.execute(sql,data)
+    date = datetime.date.today().replace(day=1, month=1) + datetime.timedelta(days=random.randint(0, 365))
+    return [pid, title, country, author, content, date]
+    
  
 # def create_comment(cur, cid,pid, author):
 #     for i in range(random.randrange(2,5)):
@@ -142,25 +143,28 @@ def create_post(cur, country, author,date):
 #         cur.execute('INSERT INTO tr_comment (cid, author, content,date) VALUES (?,?,?,?,?,?)',(id, country, author, content,date))
         
 try: 
-        conn=None   
-        conn=getConn()
-        cur = conn.cursor()
-        cid= 10
-        salt= 12345
-        dob = datetime.date(1990,1,1)
-        date = datetime.datetime.now() - datetime.timedelta(28)
-        for user in USERS:
-            create_user(cur, dob,user,salt)
-            id+=1
-            salt +=1
-            dob = dob + datetime.timedelta(days=1) 
-            conn.commit()
-        for country in COUNTRIES:
-            create_post(cur,country, 1001,date)
-            conn.commit()
-        print("insert sucessful")
-        conn.close()
+    conn=None   
+    conn=getConn()
+    cur = conn.cursor()
+    
+    cur.execute("DROP SCHEMA IF EXISTS %s CASCADE", [AsIs('travelly')])
+
+    file_p = open('schema.sql', 'r')
+    cur.execute(file_p.read())
+    
+    for user in USERS:
+        cur.execute("INSERT INTO tr_users VALUES (%s,%s,%s,%s,%s,%s,%s)", create_user(user))
+
+    cur.execute("SELECT username FROM tr_users")
+    users = cur.fetchall()
+    
+    for i, country in enumerate(COUNTRIES):
+        user = random.choice(users)
+        cur.execute("INSERT INTO tr_post VALUES (%s,%s,%s,%s,%s,%s)", create_post(user, country, i))
+
+    conn.commit()
+    conn.close()
 
 
 except Exception as e:
-    print (e)           
+    print (e)

@@ -1,3 +1,4 @@
+
 CREATE SCHEMA travelly;
 SET search_path to travelly; 
 
@@ -24,7 +25,7 @@ CREATE TABLE tr_post (
     pid          SERIAL,
     title        TEXT NOT NULL,
     country 	 VARCHAR(20) NOT NULL, 
-    author	 VARCHAR(100) NOT NULL UNIQUE,  
+    author	 VARCHAR(100) NOT NULL,  
     content      TEXT NOT NULL,
     date 	 TIMESTAMP NOT NULL,
 		 CONSTRAINT post_pk PRIMARY KEY (pid),

@@ -141,7 +141,7 @@ def insert_post(post_info):
     conn = getcon()
     cur = conn.cursor()
     cur.execute(search_path)
-    cur.execute("INSERT INTO tr_post VALUES (%s,%s,%s,%s,%s)", [title, country, author, content, date])
+    cur.execute("INSERT INTO tr_post (title, country, author, content, date) VALUES (%s,%s,%s,%s,%s)", [title, country, author, content, date])
     conn.commit()
 
 def fetch_most_recent_posts():
@@ -247,11 +247,6 @@ def createpost():
         return jsonify(status='session authed')
     else:
         return jsonify(status='bad or no session')
-
-
-
-
-
 
 
 def insert_user(data):

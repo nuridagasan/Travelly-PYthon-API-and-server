@@ -147,21 +147,106 @@ def insert_post(post_info):
 def fetch_most_recent_posts():
     conn = getcon()
     cur = conn.cursor()
-    cur.executre(search_path)
-    cur.execute("")
+    cur.execute(search_path)
+    cur.execute("SELECT * FROM tr_post ORDER BY date DESC")
+    posts = cur.fetchall()[:10]
+    posts_array = []
+    for post in posts:
+        posts_array.append({
+            "pid": post[0],
+            "title": post[1],
+            "country":post[2],
+            "author":post[3],
+            "content": post[4],
+            "date": post[5]
+        })
+    return posts_array
+
+def fetch_most_recent_user_posts(username):
+    conn = getcon()
+    cur = conn.cursor()
+    cur.execute(search_path)
+    cur.execute("SELECT * FROM tr_post WHERE author=%s ORDER BY date DESC", [username])
+    posts = cur.fetchall()[:10]
+    posts_array = []
+    for post in posts:
+        posts_array.append({
+            "pid": post[0],
+            "title": post[1],
+            "country":post[2],
+            "author":post[3],
+            "content": post[4],
+            "date": post[5]
+        })
+    return posts_array
+
+def fetch_individual_post(id):
+    conn = getcon()
+    cur = conn.cursor()
+    cur.execute(search_path)
+    cur.execute("SELECT * FROM tr_post WHERE pid=%s", [id])
+    post = cur.fetchone()
+    return {
+            "pid": post[0],
+            "title": post[1],
+            "country":post[2],
+            "author":post[3],
+            "content": post[4],
+            "date": post[5]
+        }
+
+def get_user_information(sessionID):
+    conn = getcon()
+    cur = conn.cursor()
+    cur.execute(search_path)
+    cur.execute("SELECT username FROM tr_session WHERE sid = %s", [sessionID])
+    username = cur.fetchone()
+    cur.execute("SELECT * FROM tr_users WHERE username=%s", [username])
+    user_details = cur.fetchone()
+    return {
+        "username":user_details[0],
+        "firstname":user_details[1],
+        "secondname":user_details[2],
+        "email":user_details[3],
+    }
 
 @app.route('/')
 def home():
-    # Fetch the most recent posts to display on the homepage
-    # posts = fetch_most_recent_posts()
-    return 'hello'
+    posts = fetch_most_recent_posts()
+    return render_template('index.html', recent_posts=posts)
+
+
+#### IF a user has logged in, they can view the most recent posts from any user in the application.
+@app.route('/user/<username>')
+def user_page(username):
+    session = session_auth(request.cookies)
+    if (session):
+        welcome_message = "Hello " + username 
+        user_posts = fetch_most_recent_user_posts(username)
+        return render_template('userpage.html', message=welcome_message, user_posts=user_posts)
+    else:
+        return render_template('login.html')
+
+@app.route('/post/<id>')
+def individual_post(id):
+    individual_post = fetch_individual_post(id)
+    return render_template('postpage.html', post=individual_post)
+
+@app.route('/profile')
+def profile_page():
+    session = session_auth(request.cookies)
+    if (session):
+        sessionID = request.cookies.get('sessionID')
+        private_user_information = get_user_information(sessionID)
+        return render_template('profilepage.html', user_information=private_user_information)
+    else:
+        return render_template('login.html')
 
 @app.route('/login')
 def get_login(): 
     session = session_auth(request.cookies)
     if (session):
-        print('cookie exists')
-        return 'passed'
+        return render_template("index.html")
     else:
         return render_template('login.html')
 
@@ -219,6 +304,12 @@ def signup_form():
         #Give error message to user
         return render_template('signup.html', check_input = check_input)
 
+@app.route('/createpost')
+def create_post():
+    if(session_auth(request.cookies)):
+        return render_template('post.html')
+    else:
+        return render_template('login.html')
 
 # Make a post - POST /createpost
 @app.route('/api/createpost', methods=['POST'])
@@ -244,7 +335,7 @@ def createpost():
         # Insert the data to tr_post table
         insert_post(input_data)
 
-        return jsonify(status='session authed')
+        return jsonify(status='post inserted')
     else:
         return jsonify(status='bad or no session')
 

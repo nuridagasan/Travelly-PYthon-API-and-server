@@ -136,12 +136,11 @@ def create_user(name):
     return [username, firstname, lastname, email, dob, password, salt]
 
  
-def create_post(author, country, unique_id):
-    pid=unique_id
+def create_post(author, country):
     content = 'Content for this post'
     title = 'post about %s'%(country)
     date = datetime.date.today().replace(day=1, month=1) + datetime.timedelta(days=random.randint(0, 365))
-    return [pid, title, country, author, content, date]
+    return [title, country, author, content, date]
     
  
 # def create_comment(cur, cid,pid, author):
@@ -166,10 +165,10 @@ try:
     cur.execute("SELECT username FROM tr_users")
     users = cur.fetchall()
     
-    for i, country in enumerate(COUNTRIES):
+    for country in COUNTRIES:
         user = random.choice(users)
-        cur.execute("INSERT INTO tr_post VALUES (%s,%s,%s,%s,%s,%s)", create_post(user, country, i))
-
+        cur.execute("INSERT INTO tr_post (title, country, author, content, date) VALUES (%s,%s,%s,%s,%s)", create_post(user, country))
+        
     conn.commit()
     conn.close()
 

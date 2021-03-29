@@ -137,15 +137,23 @@ def get_unused_pid():
     return cur.fetchone()
 
 def insert_post(post_info):
-    pid, title, country, author, content, date = post_info['pid'],post_info['title'],post_info['country'],post_info['author'],post_info['content'],post_info['date'],
+    title, country, author, content, date = post_info['title'],post_info['country'],post_info['author'],post_info['content'],post_info['date'],
     conn = getcon()
     cur = conn.cursor()
     cur.execute(search_path)
-    cur.execute("INSERT INTO tr_post VALUES (%s,%s,%s,%s,%s,%s)", [pid, title, country, author, content, date])
+    cur.execute("INSERT INTO tr_post VALUES (%s,%s,%s,%s,%s)", [title, country, author, content, date])
     conn.commit()
+
+def fetch_most_recent_posts():
+    conn = getcon()
+    cur = conn.cursor()
+    cur.executre(search_path)
+    cur.execute("")
 
 @app.route('/')
 def home():
+    # Fetch the most recent posts to display on the homepage
+    # posts = fetch_most_recent_posts()
     return 'hello'
 
 @app.route('/login')
@@ -167,9 +175,9 @@ def post_login():
     try:
         if(check_if_record_exists('tr_users', 'username', data['username'])):
             user_input_password = pw_hash_salt(data['password'], int(get_salt_from_db(data['username'])))
-            print(int(get_salt_from_db(data['username'])))
+            
             user_stored_password = get_password_from_db(data['username'])[0]
-            print(user_input_password, user_stored_password)
+            
             if (str(user_input_password) == str(user_stored_password)):
                 sessionID = createRandomId()
                 remove_session(data['username'])
@@ -213,7 +221,7 @@ def signup_form():
 
 
 # Make a post - POST /createpost
-@app.route('/createpost', methods=['POST'])
+@app.route('/api/createpost', methods=['POST'])
 def createpost():
     # Check that session exists and is valid. However, this could be removed as this check should be run
     # Before actually accessing the createpost page. To do this, run session auth on the /createpost
@@ -231,7 +239,7 @@ def createpost():
         # In order to completed the input_data object with the missing data needed to
         # insert the post, we can use the session to access the author of the post.
         input_data['author'] = get_username_from_session(user_session)
-        input_data['pid'] = get_unused_pid()[0] + 1
+        #input_data['pid'] = get_unused_pid()[0] + 1
         
         # Insert the data to tr_post table
         insert_post(input_data)
@@ -239,6 +247,7 @@ def createpost():
         return jsonify(status='session authed')
     else:
         return jsonify(status='bad or no session')
+
 
 
 

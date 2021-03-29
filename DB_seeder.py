@@ -10,7 +10,15 @@ def getConn():
                dbname=Travelly user=postgres password = " + "password"
     conn=psycopg2.connect(connStr)      
     return  conn
-    
+
+def pw_hash_salt(unhashed_pw,pw_salt=0):
+    num = 31
+    hashed_pw = 0
+    for i in range(0,len(unhashed_pw)):
+        hashed_pw += ((num * hashed_pw) + ord(unhashed_pw[i]))
+    hashed_salted_pw = hashed_pw + pw_salt 
+    return hashed_salted_pw
+
 USERS=["Aleida King","Billye Quayle","Mildred Beaty","Adeline Beyers","Tricia Wendel","Kizzy Bedoya","Marx Warn","Hulda Culberson","Devona Morvant","Winston Tomasello","Dede Frame","Lissa Follansbee","Timmy Dapolito","Gracie Lonon","Nana Officer","Yuri Kruchten","Chante Brasch","Edmond Toombs","Scott Schwan","Lean Beauregard","Norberto Petersen","Carole Costigan","Chantel Drumheller","Riva Redfield","Jennie Sandifer","Vivian Cimini","Goldie Hayworth","Tomeka Kimler","Micaela Juan","Jerrold Tjaden","Collene Olson","Edna Serna","Cleveland Miley","Ena Haecker","Huey Voelker","Annamae Basco","Florentina Quinlan","Eryn Chae","Mozella Mcknight"]
 
 COUNTRIES=[ 
@@ -118,13 +126,13 @@ def create_schema(cur):
     cur.execute(open("schema.sql", "r").read())
 
 def create_user(name):
-    password='password'
-    username = name.split()[0] + '999'
+    salt = 12345
+    password=pw_hash_salt('password', salt)
+    username = name.split()[0].lower() + '999'
     email = '%s.%s@email.com'%(name.split()[0][1].lower(), name.split()[1].lower())
     firstname= name.split()[0]
     lastname= name.split()[1]
     dob = datetime.date(1990,1,1)
-    salt = 12345
     return [username, firstname, lastname, email, dob, password, salt]
 
  

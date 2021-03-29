@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, url_for, redirect, session, render_template, make_response, redirect, render_template
+from flask import Flask, jsonify, request, url_for, jsonify, redirect, session, render_template, make_response, redirect, render_template
 import re
 import random
 from psycopg2.extensions import AsIs
@@ -12,6 +12,7 @@ app = Flask(__name__)
 app.config['DEBUG'] = True
 search_path = "SET SEARCH_PATH TO travelly;"
 app.config['SECRET_KEY'] = 'Thisisasecret!'
+
 
 def createRandomId():
     random_digits = 'abcdefghijklmnopABCDEFGHIJKLMNOP123456789'
@@ -82,13 +83,13 @@ def get_password_from_db(username):
         print(e)
 
 def remove_session(username):
-    conn = getcon()
-    cur = conn.cursor()
-    cur.execute(search_path)
-    cur.execute("""DELETE FROM %s WHERE username = %s""",[AsIs('tr_session'), username])
-    conn.commit()
-    conn.close()
-    return
+        conn = getcon()
+        cur = conn.cursor()
+        cur.execute(search_path)
+        cur.execute("""DELETE FROM %s WHERE username = %s""",[AsIs('tr_session'), username])
+        conn.commit()
+        conn.close()
+        return
 
 def insert_session(sid, username, time):
     conn = getcon()
@@ -101,7 +102,6 @@ def insert_session(sid, username, time):
 
 def session_auth(cookies):
     session = cookies.get('sessionID')
-    print(session)
     if (session):
         conn = getcon()
         cur = conn.cursor()
@@ -109,10 +109,40 @@ def session_auth(cookies):
         cur.execute("SELECT sid FROM tr_session WHERE sid = %s", [session])
         resp = cur.fetchone()
         conn.commit()
-        return True
+        if (resp):
+            return True
+        else:
+            return False
     else:
         return False
 
+def get_username_from_session(sessionID):
+    conn = getcon()
+    cur = conn.cursor()
+    cur.execute(search_path)
+    cur.execute("SELECT username FROM tr_session WHERE sid = %s", [sessionID])
+    user = cur.fetchone()
+    conn.commit()
+    if (user):
+        return user[0]
+    else:
+        return 'No user'
+
+def get_unused_pid():
+    conn = getcon()
+    cur = conn.cursor()
+    cur.execute(search_path)
+    cur.execute("SELECT MAX(pid) FROM tr_post;")
+    conn.commit()
+    return cur.fetchone()
+
+def insert_post(post_info):
+    pid, title, country, author, content, date = post_info['pid'],post_info['title'],post_info['country'],post_info['author'],post_info['content'],post_info['date'],
+    conn = getcon()
+    cur = conn.cursor()
+    cur.execute(search_path)
+    cur.execute("INSERT INTO tr_post VALUES (%s,%s,%s,%s,%s,%s)", [pid, title, country, author, content, date])
+    conn.commit()
 
 @app.route('/')
 def home():
@@ -137,7 +167,9 @@ def post_login():
     try:
         if(check_if_record_exists('tr_users', 'username', data['username'])):
             user_input_password = pw_hash_salt(data['password'], int(get_salt_from_db(data['username'])))
+            print(int(get_salt_from_db(data['username'])))
             user_stored_password = get_password_from_db(data['username'])[0]
+            print(user_input_password, user_stored_password)
             if (str(user_input_password) == str(user_stored_password)):
                 sessionID = createRandomId()
                 remove_session(data['username'])
@@ -179,6 +211,40 @@ def signup_form():
         #Give error message to user
         return render_template('signup.html', check_input = check_input)
 
+
+# Make a post - POST /createpost
+@app.route('/createpost', methods=['POST'])
+def createpost():
+    # Check that session exists and is valid. However, this could be removed as this check should be run
+    # Before actually accessing the createpost page. To do this, run session auth on the /createpost
+    # GET request and either redirect or allow post creation
+    if (request.cookies.get('sessionID') and session_auth(request.cookies)):
+        user_session = request.cookies.get('sessionID')
+        # Useful data that can be accessed from the request object. Data sent as JSON for testing purposes
+        input_data = {
+        'title':request.json['title'],
+        'country':request.json['country'],
+        'content': request.json['content'],
+        'date': datetime.datetime.now()
+        }
+
+        # In order to completed the input_data object with the missing data needed to
+        # insert the post, we can use the session to access the author of the post.
+        input_data['author'] = get_username_from_session(user_session)
+        input_data['pid'] = get_unused_pid()[0] + 1
+        
+        # Insert the data to tr_post table
+        insert_post(input_data)
+
+        return jsonify(status='session authed')
+    else:
+        return jsonify(status='bad or no session')
+
+
+
+
+
+
 def insert_user(data):
     try:
         conn = getcon()
@@ -218,7 +284,7 @@ def pw_hash_salt(unhashed_pw,pw_salt=0):
     hashed_pw = 0
     for i in range(0,len(unhashed_pw)):
         hashed_pw += ((num * hashed_pw) + ord(unhashed_pw[i]))
-    hashed_salted_pw = hashed_pw + pw_salt
+    hashed_salted_pw = hashed_pw + pw_salt 
     return hashed_salted_pw
 
 

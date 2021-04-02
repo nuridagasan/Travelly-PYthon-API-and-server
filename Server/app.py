@@ -8,19 +8,49 @@ import json
 import datetime
 import collections
 
+#so that we can implement csrf tokens, we need to create a session as soon as someone visits the login or create a post page (if they don't have one already). 
+# with GET request for each page, we can:
+
+    # Check for an existing session: yes/no
+    #if no:
+        #create a new session and a new csrf token and store together in db (username blank). Then render relavent page with session cookie holding sid and csrf token being sent into html form. 
+    #if yes:
+        #check if there is a username with the session ID in db. 
+        #If there is, for login:
+            #render index.html
+        #for post:
+            # get csrf token from db where username= username and render page along with csrf token which is added to the form (need to insert hidden field into each form) 
+        #if not, get csrf token where sessiondid= sessionid and return it with login.html\create_post.html 
+        
+#for the POST request for each page, we then just need to get the CSRF token from the sumitted data and check it in the db against the sessionID 
+
+
+
 app = Flask(__name__)
 app.config['DEBUG'] = True
 search_path = "SET SEARCH_PATH TO travelly;"
 app.config['SECRET_KEY'] = 'Thisisasecret!'
 
+def escape(s):
+    s = s.replace("&", "&amp;")
+    s= s.replace("<", "&lt;")
+    s = s.replace(">", "&gt;")
+    s= s.replace("\"", "&quot;")
+    s= s.replace("'", "&#x27;")
+    s= s.replace("@", "&commat;")
+    s= s.replace("=","&equals;")
+    s= s.replace("`","&grave;")
+    return s 
 
-def createRandomId():
-    random_digits = 'abcdefghijklmnopABCDEFGHIJKLMNOP123456789'
-    sess_id=''
-    for i in range(len(random_digits)):
-        random_digit = random.choice(random_digits)
-        sess_id += random_digit
-    return sess_id
+#def createRandomId():
+    #random_digits = 'abcdefghijklmnopABCDEFGHIJKLMNOP123456789'
+   # sess_id=''
+   # i = 0 
+   # while i < len(random_digits):
+       # random_digit = random.choice(random_digits)
+       # sess_id += random_digit
+       # i += 1 
+   # return sess_id
 
 def getcon():
     connStr = "host='localhost' user='postgres' dbname='Travelly' password=password"
@@ -43,15 +73,15 @@ def error_handler(err):
     print ("pgerror:", err.pgerror)
     print ("pgcode:", err.pgcode, "\n")
 
-def check_if_record_exists(table, column, string):
-    try:
-        conn = getcon()
-        cur = conn.cursor()
-        cur.execute(search_path)
-        cur.execute("""SELECT %s FROM %s WHERE %s = %s;""", [AsIs(column), AsIs(table), AsIs(column), string])
-        return cur.fetchone() is not None
-    except Exception as e:
-        print(e)
+#def check_if_record_exists(table, column, string):
+    #try:
+     #   conn = getcon()
+     #   cur = conn.cursor()
+      #  cur.execute(search_path)
+       # cur.execute("""SELECT %s FROM %s WHERE %s = %s;""", [AsIs(column), AsIs(table), AsIs(column), string])
+        #return cur.fetchone() is not None
+    #except Exception as e:
+     #   print(e)
 
 def insert_sessionID(sessionID, column, username):
     expire = datetime.datetime.now() + datetime.timedelta(hours=2)
@@ -66,8 +96,8 @@ def get_salt_from_db(username):
         conn = getcon()
         cur = conn.cursor()
         cur.execute(search_path)
-        cur.execute("SELECT salt FROM tr_users WHERE username = %s;", [username])
-        return cur.fetchone()[0]
+        cur.execute("SELECT coalesce(min(salt),'1') FROM tr_users WHERE username = %s;", [username]) #using min here means 1 row will be sent back even if there is no salt (then it will send back a row saying null)
+        return cur.fetchone()[0]                                                                     # this keeps the time exactly the same whether there is salt or not and stops errors later one. Coalesce stops it from returning NULL for line 94.  
     except Exception as e:
         error_handler(e)
 
@@ -138,6 +168,10 @@ def get_unused_pid():
 
 def insert_post(post_info):
     title, country, author, content, date = post_info['title'],post_info['country'],post_info['author'],post_info['content'],post_info['date'],
+    #post ID? 
+    title= escape(title)
+    content= escape(content) 
+    country= escape(country)
     conn = getcon()
     cur = conn.cursor()
     cur.execute(search_path)
@@ -243,35 +277,45 @@ def profile_page():
         return render_template('login.html')
 
 @app.route('/login')
-def get_login(): 
+def get_login():
     session = session_auth(request.cookies)
     if (session):
         return render_template("index.html")
     else:
-        return render_template('login.html')
+        return render_template('login.html'
+                              )
 
 @app.route('/login', methods = ['POST'])
 def post_login():   
+    # get csrf token from form and check it against the one in the db for this session ID 
+    # if match proceed, if not block. 
     data = {
             'username' : request.form['username'].lower(),
             'password' : request.form['password']
     }
     expire = datetime.datetime.now() + datetime.timedelta(hours=2)
     try:
-        if(check_if_record_exists('tr_users', 'username', data['username'])):
-            user_input_password = pw_hash_salt(data['password'], int(get_salt_from_db(data['username'])))
-            
-            user_stored_password = get_password_from_db(data['username'])[0]
-            
-            if (str(user_input_password) == str(user_stored_password)):
-                sessionID = createRandomId()
-                remove_session(data['username'])
-                insert_session(sessionID, data['username'], str(expire))
-                resp = make_response(redirect('/'))
-                resp.set_cookie('sessionID', sessionID)
-                return resp
-            else:
-                return render_template('login.html', check_input = 'Incorrect username or password')
+
+       sql= "SELECT count(*) from tr_users WHERE username =%s and password= %s"  #The count sends back 0 or 1 as a result, depending on whether the pw and username are correct 
+        user_input_password = pw_hash_salt(data['password'], int(get_salt_from_db(data['username'])))
+        query_data = (data['username'], str(user_input_password))
+        conn = getcon()
+        cur = conn.cursor()
+        cur.execute(search_path)
+        cur.execute(sql, query_data)
+        check_account = cur.fetchone()[0]
+        # if there is a result, the pw and username were correct 
+        if check_account != 0:
+            sessionID = createRandomId()
+            conn = getcon()
+            cur = conn.cursor()
+            cur.execute(search_path)
+            cur.execute("""DELETE FROM %s WHERE username = %s""",[AsIs('tr_session'), data['username']])
+            cur.execute("""INSERT INTO %s VALUES(%s,%s,%s);""", [AsIs('tr_session'), sessionID, data['username'], str(expire)])
+            resp = make_response(redirect('/'))
+            resp.set_cookie('sessionID', sessionID)
+            return resp
+
         else:
             return render_template('login.html', check_input = 'Incorrect username or password')
     except Exception as e:
@@ -369,10 +413,12 @@ def input_validation(user_sign_up):
 def pw_salt():
     random_digits = '''abcdeg_+]|,./;:>'''
     pw_salt=''
-    for i in range(len(random_digits)):
+    i = 0 
+   while i <= len(random_digits):
         random_digit = random.choice(random_digits)
         pw_salt += str(ord(random_digit))
-    return int(pw_salt)
+        i +=1 
+    return int(pw_salt) # The salt is a VARCHAR in the db at the moment so we can change the schema 
 
 def pw_hash_salt(unhashed_pw,pw_salt=0):
     num = 31
@@ -381,6 +427,18 @@ def pw_hash_salt(unhashed_pw,pw_salt=0):
         hashed_pw += ((num * hashed_pw) + ord(unhashed_pw[i]))
     hashed_salted_pw = hashed_pw + pw_salt 
     return hashed_salted_pw
+
+
+def createRandomId():
+    random_digits = 'abcdefghijklmnopABCDEFGHIJKLMNOP123456789'
+    sess_id=''
+    i = 0 
+    while i<= len(random_digits):
+        random_digit = random.choice(random_digits)
+        sess_id += random_digit
+        i +=1 
+    return sess_id
+
 
 
 if __name__ == '__main__':

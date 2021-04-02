@@ -8,19 +8,49 @@ import json
 import datetime
 import collections
 
+#so that we can implement csrf tokens, we need to create a session as soon as someone visits the login or create a post page (if they don't have one already). 
+# with GET request for each page, we can:
+
+    # Check for an existing session: yes/no
+    #if no:
+        #create a new session and a new csrf token and store together in db (username blank). Then render relavent page with session cookie holding sid and csrf token being sent into html form. 
+    #if yes:
+        #check if there is a username with the session ID in db. 
+        #If there is, for login:
+            #render index.html
+        #for post:
+            # get csrf token from db where username= username and render page along with csrf token which is added to the form (need to insert hidden field into each form) 
+        #if not, get csrf token where sessiondid= sessionid and return it with login.html\create_post.html 
+        
+#for the POST request for each page, we then just need to get the CSRF token from the sumitted data and check it in the db against the sessionID 
+
+
+
 app = Flask(__name__)
 app.config['DEBUG'] = True
 search_path = "SET SEARCH_PATH TO travelly;"
 app.config['SECRET_KEY'] = 'Thisisasecret!'
 
+def escape(s):
+    s = s.replace("&", "&amp;")
+    s= s.replace("<", "&lt;")
+    s = s.replace(">", "&gt;")
+    s= s.replace("\"", "&quot;")
+    s= s.replace("'", "&#x27;")
+    s= s.replace("@", "&commat;")
+    s= s.replace("=","&equals;")
+    s= s.replace("`","&grave;")
+    return s 
 
-def createRandomId():
-    random_digits = 'abcdefghijklmnopABCDEFGHIJKLMNOP123456789'
-    sess_id=''
-    for i in range(len(random_digits)):
-        random_digit = random.choice(random_digits)
-        sess_id += random_digit
-    return sess_id
+#def createRandomId():
+    #random_digits = 'abcdefghijklmnopABCDEFGHIJKLMNOP123456789'
+   # sess_id=''
+   # i = 0 
+   # while i < len(random_digits):
+       # random_digit = random.choice(random_digits)
+       # sess_id += random_digit
+       # i += 1 
+   # return sess_id
 
 def getcon():
     connStr = "host='localhost' user='postgres' dbname='Travelly' password=password"
@@ -67,7 +97,7 @@ def get_salt_from_db(username):
         cur = conn.cursor()
         cur.execute(search_path)
         cur.execute("SELECT coalesce(min(salt),'1') FROM tr_users WHERE username = %s;", [username]) #using min here means 1 row will be sent back even if there is no salt (then it will send back a row saying null)
-        return cur.fetchone()[0]                                                                     # this keeps the time exactly the same whether there is salt or not. Coalesce stops it from returning NULL for line 94.  
+        return cur.fetchone()[0]                                                                     # this keeps the time exactly the same whether there is salt or not and stops errors later one. Coalesce stops it from returning NULL for line 94.  
     except Exception as e:
         error_handler(e)
 
@@ -138,6 +168,10 @@ def get_unused_pid():
 
 def insert_post(post_info):
     title, country, author, content, date = post_info['title'],post_info['country'],post_info['author'],post_info['content'],post_info['date'],
+    #post ID? 
+    title= escape(title)
+    content= escape(content) 
+    country= escape(country)
     conn = getcon()
     cur = conn.cursor()
     cur.execute(search_path)
@@ -243,15 +277,18 @@ def profile_page():
         return render_template('login.html')
 
 @app.route('/login')
-def get_login(): 
+def get_login():
     session = session_auth(request.cookies)
     if (session):
         return render_template("index.html")
     else:
-        return render_template('login.html')
+        return render_template('login.html'
+                              )
 
 @app.route('/login', methods = ['POST'])
 def post_login():   
+    # get csrf token from form and check it against the one in the db for this session ID 
+    # if match proceed, if not block. 
     data = {
             'username' : request.form['username'].lower(),
             'password' : request.form['password']

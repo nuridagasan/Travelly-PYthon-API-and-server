@@ -1,7 +1,7 @@
 import psycopg2
 import datetime
 import random
-
+from psycopg2.extensions import AsIs
 def getConn():
     #pwFile = open("pw.txt", "r")
     #pw = pwFile.read()
@@ -10,7 +10,15 @@ def getConn():
                dbname=Travelly user=postgres password = " + "password"
     conn=psycopg2.connect(connStr)      
     return  conn
-    
+
+def pw_hash_salt(unhashed_pw,pw_salt=0):
+    num = 31
+    hashed_pw = 0
+    for i in range(0,len(unhashed_pw)):
+        hashed_pw += ((num * hashed_pw) + ord(unhashed_pw[i]))
+    hashed_salted_pw = hashed_pw + pw_salt 
+    return hashed_salted_pw
+
 USERS=["Aleida King","Billye Quayle","Mildred Beaty","Adeline Beyers","Tricia Wendel","Kizzy Bedoya","Marx Warn","Hulda Culberson","Devona Morvant","Winston Tomasello","Dede Frame","Lissa Follansbee","Timmy Dapolito","Gracie Lonon","Nana Officer","Yuri Kruchten","Chante Brasch","Edmond Toombs","Scott Schwan","Lean Beauregard","Norberto Petersen","Carole Costigan","Chantel Drumheller","Riva Redfield","Jennie Sandifer","Vivian Cimini","Goldie Hayworth","Tomeka Kimler","Micaela Juan","Jerrold Tjaden","Collene Olson","Edna Serna","Cleveland Miley","Ena Haecker","Huey Voelker","Annamae Basco","Florentina Quinlan","Eryn Chae","Mozella Mcknight"]
 
 COUNTRIES=[ 
@@ -114,26 +122,26 @@ COUNTRIES=[
 'El Salvador', 
 'Namibia'] 
 
+def create_schema(cur):
+    cur.execute(open("schema.sql", "r").read())
 
-
-def create_user(cur, dob,name,salt):
-    password='password'
-    username = '%s%s'%(name.split()[0][1].lower(), name.split()[1].lower())
+def create_user(name):
+    salt = 12345
+    password=pw_hash_salt('password', salt)
+    username = name.split()[0].lower() + '999'
     email = '%s.%s@email.com'%(name.split()[0][1].lower(), name.split()[1].lower())
-    fname= name.split()[0]
+    firstname= name.split()[0]
     lastname= name.split()[1]
-    sql='SET search_path to travelly; INSERT INTO tr_user (username, firstname,lastname, email, dob, password, salt) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)'
-    data= (username, fname,lastname, email, dob, password, salt)
-    cur.execute(sql,data)
+    dob = datetime.date(1990,1,1)
+    return [username, firstname, lastname, email, dob, password, salt]
+
  
- 
-def create_post(cur, country, author,date):
+def create_post(author, country):
     content = 'Content for this post'
     title = 'post about %s'%(country)
-    date = date + datetime.timedelta( random.randrange(1,3), minutes=random.randrange(1,120), hours=random.randrange(0,6) )
-    sql='SET search_path to travelly; INSERT INTO tr_post ( title, country, author, content,date) VALUES (%s,%s,%s,%s,%s)'
-    data= (title, country, author, content,date)
-    cur.execute(sql,data)
+    date = datetime.date.today().replace(day=1, month=1) + datetime.timedelta(days=random.randint(0, 365))
+    return [title, country, author, content, date]
+    
  
 # def create_comment(cur, cid,pid, author):
 #     for i in range(random.randrange(2,5)):
@@ -142,25 +150,28 @@ def create_post(cur, country, author,date):
 #         cur.execute('INSERT INTO tr_comment (cid, author, content,date) VALUES (?,?,?,?,?,?)',(id, country, author, content,date))
         
 try: 
-        conn=None   
-        conn=getConn()
-        cur = conn.cursor()
-        cid= 10
-        salt= 12345
-        dob = datetime.date(1990,1,1)
-        date = datetime.datetime.now() - datetime.timedelta(28)
-        for user in USERS:
-            create_user(cur, dob,user,salt)
-            id+=1
-            salt +=1
-            dob = dob + datetime.timedelta(days=1) 
-            conn.commit()
-        for country in COUNTRIES:
-            create_post(cur,country, 1001,date)
-            conn.commit()
-        print("insert sucessful")
-        conn.close()
+    conn=None   
+    conn=getConn()
+    cur = conn.cursor()
+    
+    cur.execute("DROP SCHEMA IF EXISTS %s CASCADE", [AsIs('travelly')])
+
+    file_p = open('schema.sql', 'r')
+    cur.execute(file_p.read())
+    
+    for user in USERS:
+        cur.execute("INSERT INTO tr_users VALUES (%s,%s,%s,%s,%s,%s,%s)", create_user(user))
+
+    cur.execute("SELECT username FROM tr_users")
+    users = cur.fetchall()
+    
+    for country in COUNTRIES:
+        user = random.choice(users)
+        cur.execute("INSERT INTO tr_post (title, country, author, content, date) VALUES (%s,%s,%s,%s,%s)", create_post(user, country))
+        
+    conn.commit()
+    conn.close()
 
 
 except Exception as e:
-    print (e)           
+    print (e)

@@ -1,7 +1,6 @@
 CREATE SCHEMA travelly;
 SET search_path to travelly; 
 
-
 CREATE TABLE tr_users (
     username     VARCHAR(100) NOT NULL UNIQUE,
     firstname    VARCHAR(20) NOT NULL,
@@ -21,17 +20,16 @@ CREATE TABLE tr_session (
 		 ON DELETE CASCADE);
 
 CREATE TABLE tr_post (
-    pid          SERIAL,
+    pid          SERIAL UNIQUE,
     title        TEXT NOT NULL,
     country 	 VARCHAR(20) NOT NULL, 
-    author	 VARCHAR(100) NOT NULL UNIQUE,  
+    author	 VARCHAR(100) NOT NULL,  
     content      TEXT NOT NULL,
     date 	 TIMESTAMP NOT NULL,
 		 CONSTRAINT post_pk PRIMARY KEY (pid),
                  CONSTRAINT post_fk1 FOREIGN KEY (author) REFERENCES tr_users(username)
 		 ON DELETE CASCADE);
 	
-
 CREATE TABLE tr_comment (
     cid          SERIAL,
     pid          INTEGER NOT NULL,

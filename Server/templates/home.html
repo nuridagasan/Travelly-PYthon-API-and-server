@@ -24,9 +24,7 @@
 <body>
   <nav class="navbar navbar-expand-lg navbar-light bg-light pb-3" id="navbar-bg">
     <a class="navbar-brand" href="#">
-      <img
-        src="https://www.flaticon.com/svg/vstatic/svg/761/761505.svg?token=exp=1617367956~hmac=4f2db3ae4f5e8f78ef92b35a182b3a6d"
-        width="75" height="75" alt="">
+      <img src="{{url_for('static', filename='world.png')}}" width="75" height="75" alt="">
     </a>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
       aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,7 +34,7 @@
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
       <ul class="navbar-nav mr-auto">
         <li class="nav-item active">
-          <a class="nav-link navbar-font-size" href="/">Home <span class="sr-only">(current)</span></a>
+          <a class="nav-link navbar-font-size" href="/home">Home <span class="sr-only">(current)</span></a>
         </li>
         <li class="dropdown float-right">
           <a class="nav-link dropdown-toggle navbar-font-size" href="#" id="navbarDropdown" role="button"
@@ -44,111 +42,105 @@
             Search
           </a>
           <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-            <a class="dropdown-item" href="#">Singapore</a>
-            <a class="dropdown-item" href="#">United Kingdom</a>
-            <a class="dropdown-item" href="#">United States</a>
-            <a class="dropdown-item" href="#">Germany</a>
-            <a class="dropdown-item" href="#">Netherlands</a>
-            <a class="dropdown-item" href="#">Finland</a>
-            <a class="dropdown-item" href="#">Norway</a>
-            <a class="dropdown-item" href="#">Sweden</a>
+            <a class="dropdown-item" href="/home/singapore">Singapore</a>
+            <a class="dropdown-item" href="/home/france">France</a>
+            <a class="dropdown-item" href="/home/italy">Italy</a>
+            <a class="dropdown-item" href="/home/spain">Spain</a>
+            <a class="dropdown-item" href="/home/england">England</a>
+            <a class="dropdown-item" href="/home/turkey">Turkey</a>
+            <a class="dropdown-item" href="/home/germany">Germany</a>
+            <a class="dropdown-item" href="/home/netherlands">Netherlands</a>
+            <a class="dropdown-item" href="/home/finland">Finland</a>
+            <a class="dropdown-item" href="/home/norway">Norway</a>
+            <a class="dropdown-item" href="/home/sweden">Sweden</a>
         </li>
       </ul>
 
+      {% if home_buttons %}
       <a class="nav-link navbar-font-size text-color" href="/profile">Profile <span class="sr-only">(current)</span></a>
-      <a class="nav-link navbar-font-size" href="/logout">Logout <span class="sr-only">(current)</span></a>
-
-
+      <a class="nav-link navbar-font-size" href="/logout" method="POST">Logout <span
+          class="sr-only">(current)</span></a>
+      {% else %}
+      <a class="nav-link navbar-font-size text-color" href="/signup">Signup <span class="sr-only">(current)</span></a>
+      <a class="nav-link navbar-font-size" href="/login">Login <span class="sr-only">(current)</span></a>
+      {% endif %}
     </div>
-
   </nav>
-
-  <div class="container mt-4">
-    <div class="row">
-      <div class="col-xl-6 col-lg-6 m-2">
-        <form>
-          <div class="form-group m-0">
-            <input class="form-control" type="text" placeholder="Post Title">
-          </div>
-          <div class="form-group m-0 pt-2">
-            <label for="inputState">Choose Your Country</label>
-            <select id="inputState" class="form-control">
-              <option selected>Singapore</option>
-              <option>United Kingdom</option>
-              <option>United States</option>
-              <option>Germany</option>
-              <option>Netherlands</option>
-              <option>Netherlands</option>
-              <option>Finland</option>
-              <option>Norway</option>
-              <option>Sweden</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="exampleFormControlTextarea1"></label>
-            <textarea class="form-control" id="exampleFormControlTextarea1" rows="5" placeholder="Your Post"></textarea>
-          </div>
-          <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-            <button class="btn btn-primary me-md-2" type="submit">Create Post</button>
-          </div>
-        </form>
-      </div>
-      <div class="col-xl-5 col-lg-5 m-2">
-        <table class="table">
-          <thead>
-            <tr>
-              <th scope="col">#</th>
-              <th scope="col">Country</th>
-              <th scope="col">Post Numbers</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <th scope="row">1</th>
-              <td>United States</td>
-              <td>15</td>
-            </tr>
-            <tr>
-              <th scope="row">2</th>
-              <td>United Kingdom</td>
-              <td>14</td>
-            </tr>
-            <tr>
-              <th scope="row">3</th>
-              <td>Germany</td>
-              <td>13</td>
-            </tr>
-            <tr>
-              <th scope="row">4</th>
-              <td>Norway</td>
-              <td>12</td>
-            </tr>
-            <tr>
-              <th scope="row">5</th>
-              <td>Sweden</td>
-              <td>11</td>
-            </tr>
-          </tbody>
-        </table>
+  <div class="bg-image">
+    <div class="container">
+      <div class="row justify-content-md-center">
+        {% if create_form %}
+        <div class="col-xl-6 col-lg-6 mt-4 table-bg">
+          <form method="POST">
+            <div class="form-group pt-4">
+              <input class="form-control" name="post-title" type="text" placeholder="Post Title" required>
+            </div>
+            <div class="form-group m-0">
+              <label for="inputState">Choose Your Country</label>
+              <select id="inputState" name="country" class="form-control">
+                <option selected>Singapore</option>
+                <option>France</option>
+                <option>Italy</option>
+                <option>Spain</option>
+                <option>England</option>
+                <option>Turkey</option>
+                <option>Germany</option>
+                <option>Netherlands</option>
+                <option>Netherlands</option>
+                <option>Finland</option>
+                <option>Norway</option>
+                <option>Sweden</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="exampleFormControlTextarea1"></label>
+              <textarea class="form-control" id="exampleFormControlTextarea1" name="post-content" rows="5"
+                placeholder="Your Post" required></textarea>
+            </div>
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end pb-3">
+              <button class="btn btn-primary me-md-2" type="submit">Create Post</button>
+            </div>
+          </form>
+        </div>
+        {% endif %}
+        <div class="col-xl-5 col-lg-5 m-4 table-bg">
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">Country</th>
+                <th scope="col">Post Numbers</th>
+              </tr>
+            </thead>
+            <tbody>
+              {%for i in range(0, len_countries)%}
+              <tr>
+                <th scope="row">{{i+1}}</th>
+                <td>{{fav_countries[i].title()}}</td>
+                <td>15</td>
+              </tr>
+              {%endfor%}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
-  </div>
-  <div class="container user-posts">
-    {%for i in range(0, len)%}
-    <div class="row  justify-content-center">
-      <div class="col-10 p-4 m-3" id="post-content-bg">
-        <h5 id="post-title p-4">{{posts[i]["title"].title()}}</h5>
-        <span class="d-md-flex top-right-corner p-2" id="user-country"><i>{{posts[i]["country"].title()}}</i></span>
-        <p class="p-4"> <span id="author">{{posts[i]["author"].title()}}</span> : {{posts[i]["content"]}}
-        </p>
-        <span class="d-md-flex bottom-right-corner p-2" id="content-date"><i>{{posts[i]["date"]}}</i></span>
+    <div class="container user-posts">
+      {%for i in range(0, len)%}
+      <div class="row  justify-content-center">
+        <div class="col-10 p-4 m-3" id="post-content-bg">
+          <h5 id="post-title p-4">{{posts[i]["title"].title()}}</h5>
+          <span class="d-md-flex top-right-corner p-2" id="user-country"><i>{{posts[i]["country"].title()}}</i></span>
+          <p class="p-4"> <span id="author">{{posts[i]["author"].title()}}</span> : {{posts[i]["content"]}}
+          </p>
+          <span class="d-md-flex bottom-right-corner p-2" id="content-date"><i>{{posts[i]["date"]}}</i></span>
+        </div>
       </div>
+      {%endfor%}
     </div>
-    {%endfor%}
+
+
   </div>
-
-
-
 </body>
 
 </html>

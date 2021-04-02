@@ -42,7 +42,7 @@ def createRandomId():
     return sess_id
 
 def getcon():
-    connStr = "host='localhost' user='postgres' dbname='Travelly' password=password"
+    connStr = "host='localhost' user='postgres' dbname='travelly' password=12345"
     conn=psycopg2.connect(connStr) 
     return conn
 
@@ -175,7 +175,7 @@ def fetch_most_recent_posts():
             "title": post[1],
             "country":post[2],
             "author":post[3],
-            "content": post[4], 
+            "content": post[4],
             "date": post[5]
         })
     return posts_array
@@ -292,22 +292,6 @@ def logout():
     else:
         return redirect(url_for('login'))   
 
-
-@app.route('/home/<country>')
-
-@app.route('/api/logout', methods=['POST'])
-def logout():
-    session = request.cookies['sessionID']
-    if (session):
-        conn = getcon()
-        cur = conn.cursor()
-        cur.execute(search_path)
-        cur.execute("DELETE FROM %s WHERE sid=%s", [AsIs('tr_session'), session])
-        conn.commit()
-        return 'Your session has been deleted'
-    
-    return render_template('home.html')
-
 @app.route('/<country>')
 def return_counry_posts(country):
     country = country.capitalize()
@@ -342,10 +326,10 @@ def user_page(username):
     else:
         return render_template('login.html')
 
-# @app.route('/post/<id>')
-# def individual_post(id):
-#     individual_post = fetch_individual_post(id)
-#     return render_template('postpage.html', post=individual_post)
+@app.route('/post/<id>')
+def individual_post(id):
+    individual_post = fetch_individual_post(id)
+    return render_template('postpage.html', post=individual_post)
 
 @app.route('/profile')
 def profile_page():
@@ -380,7 +364,6 @@ def post_login():
     }
     expire = datetime.datetime.now() + datetime.timedelta(hours=2)
     try:
-
         sql= "SELECT count(*) from tr_users WHERE username =%s and password= %s"  #The count sends back 0 or 1 as a result, depending on whether the pw and username are correct 
         user_input_password = pw_hash_salt(data['password'], int(get_salt_from_db(data['username'])))
         query_data = (data['username'], str(user_input_password))
@@ -485,8 +468,6 @@ def pw_hash_salt(unhashed_pw,pw_salt=0):
         hashed_pw += ((num * hashed_pw) + ord(unhashed_pw[i]))
     hashed_salted_pw = hashed_pw + pw_salt 
     return hashed_salted_pw
-
-
 
 def createRandomId():
     random_digits = 'abcdefghijklmnopABCDEFGHIJKLMNOP123456789'

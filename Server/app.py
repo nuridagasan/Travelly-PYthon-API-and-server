@@ -354,7 +354,7 @@ def profile_page():
 def get_login(): 
     session = session_auth(request.cookies)
     if (session):
-        return render_template("home.html")
+        return redirect(url_for('home'))
     else:
         return render_template('login.html')
 
@@ -390,7 +390,7 @@ def post_login():
             cur.execute("""DELETE FROM %s WHERE username = %s""",[AsIs('tr_session'), data['username']])
             cur.execute("""INSERT INTO %s VALUES(%s,%s,%s);""", [AsIs('tr_session'), sessionID, data['username'], str(expire)])
             conn.commit()
-            resp = make_response(redirect('/'))
+            resp = make_response(redirect('/home'))
             resp.set_cookie('sessionID', sessionID)
             return resp
 

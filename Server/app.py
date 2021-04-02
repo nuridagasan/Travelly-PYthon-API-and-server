@@ -8,7 +8,7 @@ import json
 import datetime
 import collections
 
-#so that we can implement csrf tokens, we need to create a session as soon as someone visits the login or create a post page (if they don't have one already). 
+# so that we can implement csrf tokens, we need to create a session as soon as someone visits the login or create a post page (if they don't have one already). 
 # with GET request for each page, we can:
 
     # Check for an existing session: yes/no

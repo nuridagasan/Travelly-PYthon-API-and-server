@@ -25,7 +25,7 @@
   <nav class="navbar navbar-expand-lg navbar-light bg-light pb-3" id="navbar-bg">
     <a class="navbar-brand" href="#">
       <img
-        src="https://www.flaticon.com/svg/vstatic/svg/761/761505.svg?token=exp=1617367956~hmac=4f2db3ae4f5e8f78ef92b35a182b3a6d"
+        src="{{url_for('static', filename='world.png')}}" 
         width="75" height="75" alt="">
     </a>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
@@ -36,7 +36,7 @@
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
       <ul class="navbar-nav mr-auto">
         <li class="nav-item active">
-          <a class="nav-link navbar-font-size" href="/">Home <span class="sr-only">(current)</span></a>
+          <a class="nav-link navbar-font-size" href="/home">Home <span class="sr-only">(current)</span></a>
         </li>
         <li class="dropdown float-right">
           <a class="nav-link dropdown-toggle navbar-font-size" href="#" id="navbarDropdown" role="button"
@@ -44,24 +44,22 @@
             Search
           </a>
           <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-            <a class="dropdown-item" href="#">Singapore</a>
-            <a class="dropdown-item" href="#">France</a>
-            <a class="dropdown-item" href="#">Italy</a>
-            <a class="dropdown-item" href="#">Spain</a>
-            <a class="dropdown-item" href="#">England</a>
-            <a class="dropdown-item" href="#">Turkey</a>
-            <a class="dropdown-item" href="#">Germany</a>
-            <a class="dropdown-item" href="#">Netherlands</a>
-            <a class="dropdown-item" href="#">Finland</a>
-            <a class="dropdown-item" href="#">Norway</a>
-            <a class="dropdown-item" href="#">Sweden</a>
+            <a class="dropdown-item" href="/home/singapore">Singapore</a>
+            <a class="dropdown-item" href="/home/france">France</a>
+            <a class="dropdown-item" href="/home/italy">Italy</a>
+            <a class="dropdown-item" href="/home/spain">Spain</a>
+            <a class="dropdown-item" href="/home/england">England</a>
+            <a class="dropdown-item" href="/home/turkey">Turkey</a>
+            <a class="dropdown-item" href="/home/germany">Germany</a>
+            <a class="dropdown-item" href="/home/netherlands">Netherlands</a>
+            <a class="dropdown-item" href="/home/finland">Finland</a>
+            <a class="dropdown-item" href="/home/norway">Norway</a>
+            <a class="dropdown-item" href="/home/sweden">Sweden</a>
         </li>
       </ul>
 
     {{home_buttons | safe}}
-
     </div>
-
   </nav>
 
   <div class="container mt-4">
@@ -77,31 +75,13 @@
             </tr>
           </thead>
           <tbody>
+          {%for i in range(1, len_countries)%}
             <tr>
-              <th scope="row">1</th>
-              <td>United States</td>
+              <th scope="row">{{i}}</th>
+              <td>{{fav_countries[i].title()}}</td>
               <td>15</td>
             </tr>
-            <tr>
-              <th scope="row">2</th>
-              <td>United Kingdom</td>
-              <td>14</td>
-            </tr>
-            <tr>
-              <th scope="row">3</th>
-              <td>Germany</td>
-              <td>13</td>
-            </tr>
-            <tr>
-              <th scope="row">4</th>
-              <td>Norway</td>
-              <td>12</td>
-            </tr>
-            <tr>
-              <th scope="row">5</th>
-              <td>Sweden</td>
-              <td>11</td>
-            </tr>
+            {%endfor%}
           </tbody>
         </table>
       </div>

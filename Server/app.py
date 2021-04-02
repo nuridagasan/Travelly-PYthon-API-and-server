@@ -194,6 +194,15 @@ def fetch_individual_post(id):
             "date": post[5]
         }
 
+def fetch_five_most_pop():
+    conn = getcon()
+    cur = conn.cursor()
+    cur.execute(search_path)
+    cur.execute("SELECT country FROM %s GROUP BY country ORDER BY COUNT(*) DESC LIMIT 5", [AsIs('tr_post')])
+    conn.commit()
+    resp = cur.fetchall()
+    return resp
+
 def get_user_information(sessionID):
     conn = getcon()
     cur = conn.cursor()
@@ -212,7 +221,7 @@ def get_user_information(sessionID):
 def profile_logout_buttons():
     buttons = """
         <a class="nav-link navbar-font-size text-color" href="/profile">Profile <span class="sr-only">(current)</span></a>
-        <a class="nav-link navbar-font-size" href="/logout">Logout <span class="sr-only">(current)</span></a>
+        <a class="nav-link navbar-font-size" href="/logout" method = "POST">Logout <span class="sr-only">(current)</span></a>
     """
     return buttons
 
@@ -241,6 +250,7 @@ def home_user_post_form():
               <option>Turkey</option>
               <option>Germany</option>
               <option>Netherlands</option>
+              <option>Netherlands</option>
               <option>Finland</option>
               <option>Norway</option>
               <option>Sweden</option>
@@ -261,12 +271,15 @@ def home_user_post_form():
 def home():
     posts = fetch_most_recent_posts()
     session = session_auth(request.cookies)
+    five_most_popular = fetch_five_most_pop()
+    five_most_pop_string =  " ".join([i[0] for i in five_most_popular])
+    countries = five_most_pop_string.split()
     if (session):
         sessionID = request.cookies.get('sessionID')
         private_user_information = get_user_information(sessionID)
-        return render_template('home.html', len = len(posts), posts = posts, create_form = home_user_post_form(), home_buttons = profile_logout_buttons())
+        return render_template('home.html', len = len(posts), posts = posts, create_form = home_user_post_form(), home_buttons = profile_logout_buttons(), fav_countries = countries, len_countries = len(countries) )
     else:
-        return render_template('home.html', len = len(posts), posts = posts, create_form = "", home_buttons = signup_login_buttons())
+        return render_template('home.html', len = len(posts), posts = posts, create_form = "", home_buttons = signup_login_buttons(), fav_countries = countries, len_countries = len(countries))
 
 # Make a post - POST /createpost
 @app.route('/home', methods=['POST'])
@@ -295,6 +308,41 @@ def createpost():
         return redirect(url_for('home'))
     else:
         return jsonify(status='bad or no session')
+
+@app.route('/logout', methods=['GET'])
+def logout():
+    session = request.cookies['sessionID']
+    if (session and request.method == 'GET'):
+        conn = getcon()
+        cur = conn.cursor()
+        cur.execute(search_path)
+        cur.execute("DELETE FROM %s WHERE sid=%s", [AsIs('tr_session'), session])
+        conn.commit() 
+        return redirect(url_for('home'))
+    else:
+        return redirect(url_for('login'))   
+
+@app.route('/home/<country>')
+def return_counry_posts(country):
+    country = country.capitalize()
+    conn = getcon()
+    cur = conn.cursor()
+    cur.execute(search_path)
+    cur.execute("SELECT * FROM %s WHERE country=%s", [AsIs('tr_post'), country])
+    conn.commit()
+    res = cur.fetchall()
+    posts = []
+    for p in res:
+        post = {
+            "pid": p[0],
+            "title": p[1],
+            "country": p[2],
+            "username": p[3],
+            "content": p[4],
+            "date": p[5]
+        }
+        posts.append(post)
+    return render_template('country.html', posts = posts)
 
 #### IF a user has logged in, they can view the most recent posts from any user in the application.
 @app.route('/user/<username>')

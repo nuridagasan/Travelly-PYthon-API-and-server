@@ -31,6 +31,15 @@ app.config['DEBUG'] = True
 search_path = "SET SEARCH_PATH TO travelly;"
 app.config['SECRET_KEY'] = 'Thisisasecret!'
 
+
+def createRandomId():
+    random_digits = 'abcdefghijklmnopABCDEFGHIJKLMNOP123456789'
+    sess_id=''
+    for i in range(len(random_digits)):
+        random_digit = random.choice(random_digits)
+        sess_id += random_digit
+    return sess_id
+
 def escape(s):
     s = s.replace("&", "&amp;")
     s= s.replace("<", "&lt;")
@@ -52,8 +61,9 @@ def escape(s):
        # i += 1 
    # return sess_id
 
+
 def getcon():
-    connStr = "host='localhost' user='postgres' dbname='Travelly' password=password"
+    connStr = "host='localhost' user='postgres' dbname='travelly' password=12345"
     conn=psycopg2.connect(connStr) 
     return conn
 
@@ -247,7 +257,8 @@ def get_user_information(sessionID):
 @app.route('/')
 def home():
     posts = fetch_most_recent_posts()
-    return render_template('index.html', recent_posts=posts)
+    print(posts[0]["title"])
+    return render_template('home.html', len = len(posts), posts = posts)
 
 
 #### IF a user has logged in, they can view the most recent posts from any user in the application.
@@ -442,6 +453,6 @@ def createRandomId():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(port=80, debug=True)
 
 

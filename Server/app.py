@@ -227,10 +227,10 @@ def user_page(username):
     else:
         return render_template('login.html')
 
-@app.route('/post/<id>')
-def individual_post(id):
-    individual_post = fetch_individual_post(id)
-    return render_template('postpage.html', post=individual_post)
+# @app.route('/post/<id>')
+# def individual_post(id):
+#     individual_post = fetch_individual_post(id)
+#     return render_template('postpage.html', post=individual_post)
 
 @app.route('/profile')
 def profile_page():

@@ -96,7 +96,6 @@ def insert_session(sid, username, time):
     cur.execute(search_path)
     cur.execute("""INSERT INTO %s VALUES(%s,%s,%s);""", [AsIs('tr_session'), sid, username, time])
     conn.commit()
-    print('inserted')
     return 
 
 def session_auth(cookies):
@@ -218,57 +217,9 @@ def get_user_information(sessionID):
         "email":user_details[3],
     }
 
-def profile_logout_buttons():
-    buttons = """
-        <a class="nav-link navbar-font-size text-color" href="/profile">Profile <span class="sr-only">(current)</span></a>
-        <a class="nav-link navbar-font-size" href="/logout" method = "POST">Logout <span class="sr-only">(current)</span></a>
-    """
-    return buttons
-
-def signup_login_buttons():
-    buttons = """
-        <a class="nav-link navbar-font-size text-color" href="/signup">Signup <span class="sr-only">(current)</span></a>
-        <a class="nav-link navbar-font-size" href="/login">Login <span class="sr-only">(current)</span></a>
-    """
-    return buttons
-
-def home_user_post_form():
-    form_html_code = """
-    <div class="col-xl-6 col-lg-6 m-2">
-        <form method="POST">
-          <div class="form-group m-0">
-            <input class="form-control" name="post-title" type="text" placeholder="Post Title" required>
-          </div>
-          <div class="form-group m-0 pt-2">
-            <label for="inputState">Choose Your Country</label>
-            <select id="inputState" name="country" class="form-control">
-              <option selected>Singapore</option>
-              <option>France</option>
-              <option>Italy</option>
-              <option>Spain</option>
-              <option>England</option>
-              <option>Turkey</option>
-              <option>Germany</option>
-              <option>Netherlands</option>
-              <option>Netherlands</option>
-              <option>Finland</option>
-              <option>Norway</option>
-              <option>Sweden</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="exampleFormControlTextarea1"></label>
-            <textarea class="form-control" id="exampleFormControlTextarea1" name="post-content" rows="5" placeholder="Your Post" required></textarea>
-          </div>
-          <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-            <button class="btn btn-primary me-md-2" type="submit">Create Post</button>
-          </div>
-        </form>
-    </div> """
-    return form_html_code
-
 @app.route('/home', methods = ['GET'])
 def home():
+    home_buttons = False
     posts = fetch_most_recent_posts()
     session = session_auth(request.cookies)
     five_most_popular = fetch_five_most_pop()
@@ -277,9 +228,9 @@ def home():
     if (session):
         sessionID = request.cookies.get('sessionID')
         private_user_information = get_user_information(sessionID)
-        return render_template('home.html', len = len(posts), posts = posts, create_form = home_user_post_form(), home_buttons = profile_logout_buttons(), fav_countries = countries, len_countries = len(countries) )
+        return render_template('home.html', len = len(posts), posts = posts, create_form = True, home_buttons = True, fav_countries = countries, len_countries = len(countries) )
     else:
-        return render_template('home.html', len = len(posts), posts = posts, create_form = "", home_buttons = signup_login_buttons(), fav_countries = countries, len_countries = len(countries))
+        return render_template('home.html', len = len(posts), posts = posts, fav_countries = countries, len_countries = len(countries))
 
 # Make a post - POST /createpost
 @app.route('/home', methods=['POST'])
@@ -288,7 +239,6 @@ def createpost():
     # Before actually accessing the createpost page. To do this, run session auth on the /createpost
     # GET request and either redirect or allow post creation
     posts = fetch_most_recent_posts()
-    print(posts)
     if (request.cookies.get('sessionID') and session_auth(request.cookies)):
         user_session = request.cookies.get('sessionID')
         # Useful data that can be accessed from the request object. Data sent as JSON for testing purposes

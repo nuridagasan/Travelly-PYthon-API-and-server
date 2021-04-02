@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='styles/home.css') }}">
+  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+    integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+    crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+    integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+    crossorigin="anonymous"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+    integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+    crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+    integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+  <title>Home</title>
+</head>
+
+<body>
+  <nav class="navbar navbar-expand-lg navbar-light bg-light pb-3" id="navbar-bg">
+    <a class="navbar-brand" href="#">
+      <img
+        src="https://www.flaticon.com/svg/vstatic/svg/761/761505.svg?token=exp=1617367956~hmac=4f2db3ae4f5e8f78ef92b35a182b3a6d"
+        width="75" height="75" alt="">
+    </a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+      aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav mr-auto">
+        <li class="nav-item active">
+          <a class="nav-link navbar-font-size" href="/">Home <span class="sr-only">(current)</span></a>
+        </li>
+        <li class="dropdown float-right">
+          <a class="nav-link dropdown-toggle navbar-font-size" href="#" id="navbarDropdown" role="button"
+            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Search
+          </a>
+          <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+            <a class="dropdown-item" href="#">Singapore</a>
+            <a class="dropdown-item" href="#">United Kingdom</a>
+            <a class="dropdown-item" href="#">United States</a>
+            <a class="dropdown-item" href="#">Germany</a>
+            <a class="dropdown-item" href="#">Netherlands</a>
+            <a class="dropdown-item" href="#">Finland</a>
+            <a class="dropdown-item" href="#">Norway</a>
+            <a class="dropdown-item" href="#">Sweden</a>
+        </li>
+      </ul>
+
+      <a class="nav-link navbar-font-size text-color" href="/profile">Profile <span class="sr-only">(current)</span></a>
+      <a class="nav-link navbar-font-size" href="/logout">Logout <span class="sr-only">(current)</span></a>
+
+
+    </div>
+
+  </nav>
+
+  <div class="container mt-4">
+    <div class="row">
+      <div class="col-xl-6 col-lg-6 m-2">
+        <form>
+          <div class="form-group m-0">
+            <input class="form-control" type="text" placeholder="Post Title">
+          </div>
+          <div class="form-group m-0 pt-2">
+            <label for="inputState">Choose Your Country</label>
+            <select id="inputState" class="form-control">
+              <option selected>Singapore</option>
+              <option>United Kingdom</option>
+              <option>United States</option>
+              <option>Germany</option>
+              <option>Netherlands</option>
+              <option>Netherlands</option>
+              <option>Finland</option>
+              <option>Norway</option>
+              <option>Sweden</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="exampleFormControlTextarea1"></label>
+            <textarea class="form-control" id="exampleFormControlTextarea1" rows="5" placeholder="Your Post"></textarea>
+          </div>
+          <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+            <button class="btn btn-primary me-md-2" type="submit">Create Post</button>
+          </div>
+        </form>
+      </div>
+      <div class="col-xl-5 col-lg-5 m-2">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">Country</th>
+              <th scope="col">Post Numbers</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">1</th>
+              <td>United States</td>
+              <td>15</td>
+            </tr>
+            <tr>
+              <th scope="row">2</th>
+              <td>United Kingdom</td>
+              <td>14</td>
+            </tr>
+            <tr>
+              <th scope="row">3</th>
+              <td>Germany</td>
+              <td>13</td>
+            </tr>
+            <tr>
+              <th scope="row">4</th>
+              <td>Norway</td>
+              <td>12</td>
+            </tr>
+            <tr>
+              <th scope="row">5</th>
+              <td>Sweden</td>
+              <td>11</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="container user-posts">
+    {%for i in range(0, len)%}
+    <div class="row  justify-content-center">
+      <div class="col-10 p-4 m-3" id="post-content-bg">
+        <h5 id="post-title p-4">{{posts[i]["title"].title()}}</h5>
+        <span class="d-md-flex top-right-corner p-2" id="user-country"><i>{{posts[i]["country"].title()}}</i></span>
+        <p class="p-4"> <span id="author">{{posts[i]["author"].title()}}</span> : {{posts[i]["content"]}}
+        </p>
+        <span class="d-md-flex bottom-right-corner p-2" id="content-date"><i>{{posts[i]["date"]}}</i></span>
+      </div>
+    </div>
+    {%endfor%}
+  </div>
+
+
+
+</body>
+
+</html>

@@ -1,0 +1,34 @@
+#navbar-bg {
+    background-color: rgb(218, 249, 255)!important;
+} 
+
+.navbar-font-size {
+font-size : 1.4rem!important;
+}
+
+.text-color {
+    color:rgb(0, 0, 0);
+}
+
+#author {
+    color:rgb(0, 0, 0);
+    font-weight: 600!important;
+}
+
+#post-content-bg{
+    background-color: #fcfcfc;
+}
+
+.top-right-corner{
+    position:absolute;
+    top:0;
+    right:0;
+    color:rgb(0, 0, 0);
+    font-weight: 600!important;
+   }
+
+.bottom-right-corner {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+  }

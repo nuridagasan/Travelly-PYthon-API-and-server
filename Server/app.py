@@ -8,6 +8,7 @@ import json
 import datetime
 import collections
 
+
 # so that we can implement csrf tokens, we need to create a session as soon as someone visits the login or create a post page (if they don't have one already). 
 # with GET request for each page, we can:
 
@@ -26,11 +27,11 @@ import collections
 
 
 
+
 app = Flask(__name__)
 app.config['DEBUG'] = True
 search_path = "SET SEARCH_PATH TO travelly;"
 app.config['SECRET_KEY'] = 'Thisisasecret!'
-
 
 def createRandomId():
     random_digits = 'abcdefghijklmnopABCDEFGHIJKLMNOP123456789'
@@ -39,28 +40,6 @@ def createRandomId():
         random_digit = random.choice(random_digits)
         sess_id += random_digit
     return sess_id
-
-def escape(s):
-    s = s.replace("&", "&amp;")
-    s= s.replace("<", "&lt;")
-    s = s.replace(">", "&gt;")
-    s= s.replace("\"", "&quot;")
-    s= s.replace("'", "&#x27;")
-    s= s.replace("@", "&commat;")
-    s= s.replace("=","&equals;")
-    s= s.replace("`","&grave;")
-    return s 
-
-#def createRandomId():
-    #random_digits = 'abcdefghijklmnopABCDEFGHIJKLMNOP123456789'
-   # sess_id=''
-   # i = 0 
-   # while i < len(random_digits):
-       # random_digit = random.choice(random_digits)
-       # sess_id += random_digit
-       # i += 1 
-   # return sess_id
-
 
 def getcon():
     connStr = "host='localhost' user='postgres' dbname='Travelly' password=password"
@@ -83,15 +62,15 @@ def error_handler(err):
     print ("pgerror:", err.pgerror)
     print ("pgcode:", err.pgcode, "\n")
 
-#def check_if_record_exists(table, column, string):
-    #try:
-     #   conn = getcon()
-     #   cur = conn.cursor()
-      #  cur.execute(search_path)
-       # cur.execute("""SELECT %s FROM %s WHERE %s = %s;""", [AsIs(column), AsIs(table), AsIs(column), string])
-        #return cur.fetchone() is not None
-    #except Exception as e:
-     #   print(e)
+def check_if_record_exists(table, column, string):
+    try:
+        conn = getcon()
+        cur = conn.cursor()
+        cur.execute(search_path)
+        cur.execute("""SELECT %s FROM %s WHERE %s = %s;""", [AsIs(column), AsIs(table), AsIs(column), string])
+        return cur.fetchone() is not None
+    except Exception as e:
+        print(e)
 
 def insert_sessionID(sessionID, column, username):
     expire = datetime.datetime.now() + datetime.timedelta(hours=2)
@@ -106,8 +85,8 @@ def get_salt_from_db(username):
         conn = getcon()
         cur = conn.cursor()
         cur.execute(search_path)
-        cur.execute("SELECT coalesce(min(salt),'1') FROM tr_users WHERE username = %s;", [username]) #using min here means 1 row will be sent back even if there is no salt (then it will send back a row saying null)
-        return cur.fetchone()[0]                                                                     # this keeps the time exactly the same whether there is salt or not and stops errors later one. Coalesce stops it from returning NULL for line 94.  
+        cur.execute("SELECT salt FROM tr_users WHERE username = %s;", [username])
+        return cur.fetchone()[0]
     except Exception as e:
         error_handler(e)
 
@@ -137,7 +116,6 @@ def insert_session(sid, username, time):
     cur.execute(search_path)
     cur.execute("""INSERT INTO %s VALUES(%s,%s,%s);""", [AsIs('tr_session'), sid, username, time])
     conn.commit()
-    print('inserted')
     return 
 
 def session_auth(cookies):
@@ -178,10 +156,6 @@ def get_unused_pid():
 
 def insert_post(post_info):
     title, country, author, content, date = post_info['title'],post_info['country'],post_info['author'],post_info['content'],post_info['date'],
-    #post ID? 
-    title= escape(title)
-    content= escape(content) 
-    country= escape(country)
     conn = getcon()
     cur = conn.cursor()
     cur.execute(search_path)
@@ -239,6 +213,15 @@ def fetch_individual_post(id):
             "date": post[5]
         }
 
+def fetch_five_most_pop():
+    conn = getcon()
+    cur = conn.cursor()
+    cur.execute(search_path)
+    cur.execute("SELECT country FROM %s GROUP BY country ORDER BY COUNT(*) DESC LIMIT 5", [AsIs('tr_post')])
+    conn.commit()
+    resp = cur.fetchall()
+    return resp
+
 def get_user_information(sessionID):
     conn = getcon()
     cur = conn.cursor()
@@ -254,11 +237,63 @@ def get_user_information(sessionID):
         "email":user_details[3],
     }
 
-@app.route('/')
+@app.route('/home', methods = ['GET'])
 def home():
+    home_buttons = False
     posts = fetch_most_recent_posts()
-    print(posts[0]["title"])
-    return render_template('home.html', len = len(posts), posts = posts)
+    session = session_auth(request.cookies)
+    five_most_popular = fetch_five_most_pop()
+    five_most_pop_string =  " ".join([i[0] for i in five_most_popular])
+    countries = five_most_pop_string.split()
+    if (session):
+        sessionID = request.cookies.get('sessionID')
+        private_user_information = get_user_information(sessionID)
+        return render_template('home.html', len = len(posts), posts = posts, create_form = True, home_buttons = True, fav_countries = countries, len_countries = len(countries) )
+    else:
+        return render_template('home.html', len = len(posts), posts = posts, fav_countries = countries, len_countries = len(countries))
+
+# Make a post - POST /createpost
+@app.route('/home', methods=['POST'])
+def createpost():
+    # Check that session exists and is valid. However, this could be removed as this check should be run
+    # Before actually accessing the createpost page. To do this, run session auth on the /createpost
+    # GET request and either redirect or allow post creation
+    posts = fetch_most_recent_posts()
+    if (request.cookies.get('sessionID') and session_auth(request.cookies)):
+        user_session = request.cookies.get('sessionID')
+        # Useful data that can be accessed from the request object. Data sent as JSON for testing purposes
+        input_data = {
+        'title': str(request.form['post-title'].lower()),
+        'country': str(request.form.get('country').lower()),
+        'content': str(request.form['post-content'].lower()),
+        'date': datetime.datetime.now()
+        }
+
+        # In order to completed the input_data object with the missing data needed to
+        # insert the post, we can use the session to access the author of the post.
+        input_data['author'] = get_username_from_session(user_session)
+        #input_data['pid'] = get_unused_pid()[0] + 1
+        # Insert the data to tr_post table
+        insert_post(input_data)
+        return redirect(url_for('home'))
+    else:
+        return jsonify(status='bad or no session')
+
+@app.route('/logout', methods=['GET'])
+def logout():
+    session = request.cookies['sessionID']
+    if (session and request.method == 'GET'):
+        conn = getcon()
+        cur = conn.cursor()
+        cur.execute(search_path)
+        cur.execute("DELETE FROM %s WHERE sid=%s", [AsIs('tr_session'), session])
+        conn.commit() 
+        return redirect(url_for('home'))
+    else:
+        return redirect(url_for('login'))   
+
+
+@app.route('/home/<country>')
 
 @app.route('/api/logout', methods=['POST'])
 def logout():
@@ -295,7 +330,7 @@ def return_counry_posts(country):
         posts.append(post)
     return render_template('country.html', posts = posts)
 
-
+  
 #### IF a user has logged in, they can view the most recent posts from any user in the application.
 @app.route('/user/<username>')
 def user_page(username):
@@ -323,7 +358,7 @@ def profile_page():
         return render_template('login.html')
 
 @app.route('/login')
-def get_login():
+def get_login(): 
     session = session_auth(request.cookies)
     if (session):
         return render_template("home.html")
@@ -332,9 +367,12 @@ def get_login():
 
 @app.route('/login', methods = ['POST'])
 def post_login():   
+
+
     # get csrf token from form and check it against the one in the db for this session ID 
     # if match proceed, if not block. 
     session = session_auth(request.cookies)
+
 
     data = {
             'username' : request.form['username'].lower(),
@@ -342,6 +380,7 @@ def post_login():
     }
     expire = datetime.datetime.now() + datetime.timedelta(hours=2)
     try:
+
         sql= "SELECT count(*) from tr_users WHERE username =%s and password= %s"  #The count sends back 0 or 1 as a result, depending on whether the pw and username are correct 
         user_input_password = pw_hash_salt(data['password'], int(get_salt_from_db(data['username'])))
         query_data = (data['username'], str(user_input_password))
@@ -362,6 +401,7 @@ def post_login():
             resp = make_response(redirect('/'))
             resp.set_cookie('sessionID', sessionID)
             return resp
+
 
         else:
             return render_template('login.html', check_input = 'Incorrect username or password')
@@ -402,34 +442,6 @@ def create_post():
     else:
         return render_template('login.html')
 
-# Make a post - POST /createpost
-@app.route('/api/createpost', methods=['POST'])
-def createpost():
-    # Check that session exists and is valid. However, this could be removed as this check should be run
-    # Before actually accessing the createpost page. To do this, run session auth on the /createpost
-    # GET request and either redirect or allow post creation
-    if (request.cookies.get('sessionID') and session_auth(request.cookies)):
-        user_session = request.cookies.get('sessionID')
-        # Useful data that can be accessed from the request object. Data sent as JSON for testing purposes
-        input_data = {
-        'title':request.json['title'],
-        'country':request.json['country'],
-        'content': request.json['content'],
-        'date': datetime.datetime.now()
-        }
-
-        # In order to completed the input_data object with the missing data needed to
-        # insert the post, we can use the session to access the author of the post.
-        input_data['author'] = get_username_from_session(user_session)
-        #input_data['pid'] = get_unused_pid()[0] + 1
-        
-        # Insert the data to tr_post table
-        insert_post(input_data)
-
-        return jsonify(status='post inserted')
-    else:
-        return jsonify(status='bad or no session')
-
 
 def insert_user(data):
     try:
@@ -464,8 +476,7 @@ def pw_salt():
     while i <= len(random_digits):
         random_digit = random.choice(random_digits)
         pw_salt += str(ord(random_digit))
-        i +=1 
-    return int(pw_salt) # The salt is a VARCHAR in the db at the moment so we can change the schema 
+    return int(pw_salt)
 
 def pw_hash_salt(unhashed_pw,pw_salt=0):
     num = 31
@@ -474,6 +485,7 @@ def pw_hash_salt(unhashed_pw,pw_salt=0):
         hashed_pw += ((num * hashed_pw) + ord(unhashed_pw[i]))
     hashed_salted_pw = hashed_pw + pw_salt 
     return hashed_salted_pw
+
 
 
 def createRandomId():
@@ -487,6 +499,7 @@ def createRandomId():
         i +=1 
     
     return sess_id
+
 
 if __name__ == '__main__':
     app.run(port=80, debug=True)

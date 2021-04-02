@@ -209,12 +209,92 @@ def get_user_information(sessionID):
         "email":user_details[3],
     }
 
-@app.route('/')
+def profile_logout_buttons():
+    buttons = """
+        <a class="nav-link navbar-font-size text-color" href="/profile">Profile <span class="sr-only">(current)</span></a>
+        <a class="nav-link navbar-font-size" href="/logout">Logout <span class="sr-only">(current)</span></a>
+    """
+    return buttons
+
+def signup_login_buttons():
+    buttons = """
+        <a class="nav-link navbar-font-size text-color" href="/signup">Signup <span class="sr-only">(current)</span></a>
+        <a class="nav-link navbar-font-size" href="/login">Login <span class="sr-only">(current)</span></a>
+    """
+    return buttons
+
+def home_user_post_form():
+    form_html_code = """
+    <div class="col-xl-6 col-lg-6 m-2">
+        <form method="POST">
+          <div class="form-group m-0">
+            <input class="form-control" name="post-title" type="text" placeholder="Post Title" required>
+          </div>
+          <div class="form-group m-0 pt-2">
+            <label for="inputState">Choose Your Country</label>
+            <select id="inputState" name="country" class="form-control">
+              <option selected>Singapore</option>
+              <option>France</option>
+              <option>Italy</option>
+              <option>Spain</option>
+              <option>England</option>
+              <option>Turkey</option>
+              <option>Germany</option>
+              <option>Netherlands</option>
+              <option>Finland</option>
+              <option>Norway</option>
+              <option>Sweden</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="exampleFormControlTextarea1"></label>
+            <textarea class="form-control" id="exampleFormControlTextarea1" name="post-content" rows="5" placeholder="Your Post" required></textarea>
+          </div>
+          <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+            <button class="btn btn-primary me-md-2" type="submit">Create Post</button>
+          </div>
+        </form>
+    </div> """
+    return form_html_code
+
+@app.route('/home', methods = ['GET'])
 def home():
     posts = fetch_most_recent_posts()
-    print(posts[0]["title"])
-    return render_template('home.html', len = len(posts), posts = posts)
+    session = session_auth(request.cookies)
+    if (session):
+        sessionID = request.cookies.get('sessionID')
+        private_user_information = get_user_information(sessionID)
+        return render_template('home.html', len = len(posts), posts = posts, create_form = home_user_post_form(), home_buttons = profile_logout_buttons())
+    else:
+        return render_template('home.html', len = len(posts), posts = posts, create_form = "", home_buttons = signup_login_buttons())
 
+# Make a post - POST /createpost
+@app.route('/home', methods=['POST'])
+def createpost():
+    # Check that session exists and is valid. However, this could be removed as this check should be run
+    # Before actually accessing the createpost page. To do this, run session auth on the /createpost
+    # GET request and either redirect or allow post creation
+    posts = fetch_most_recent_posts()
+    print(posts)
+    if (request.cookies.get('sessionID') and session_auth(request.cookies)):
+        user_session = request.cookies.get('sessionID')
+        # Useful data that can be accessed from the request object. Data sent as JSON for testing purposes
+        input_data = {
+        'title': str(request.form['post-title'].lower()),
+        'country': str(request.form.get('country').lower()),
+        'content': str(request.form['post-content'].lower()),
+        'date': datetime.datetime.now()
+        }
+
+        # In order to completed the input_data object with the missing data needed to
+        # insert the post, we can use the session to access the author of the post.
+        input_data['author'] = get_username_from_session(user_session)
+        #input_data['pid'] = get_unused_pid()[0] + 1
+        # Insert the data to tr_post table
+        insert_post(input_data)
+        return redirect(url_for('home'))
+    else:
+        return jsonify(status='bad or no session')
 
 #### IF a user has logged in, they can view the most recent posts from any user in the application.
 @app.route('/user/<username>')
@@ -246,7 +326,7 @@ def profile_page():
 def get_login(): 
     session = session_auth(request.cookies)
     if (session):
-        return render_template("index.html")
+        return render_template("home.html")
     else:
         return render_template('login.html')
 
@@ -267,7 +347,7 @@ def post_login():
                 sessionID = createRandomId()
                 remove_session(data['username'])
                 insert_session(sessionID, data['username'], str(expire))
-                resp = make_response(redirect('/'))
+                resp = make_response(redirect('/home'))
                 resp.set_cookie('sessionID', sessionID)
                 return resp
             else:
@@ -311,34 +391,6 @@ def create_post():
     else:
         return render_template('login.html')
 
-# Make a post - POST /createpost
-@app.route('/api/createpost', methods=['POST'])
-def createpost():
-    # Check that session exists and is valid. However, this could be removed as this check should be run
-    # Before actually accessing the createpost page. To do this, run session auth on the /createpost
-    # GET request and either redirect or allow post creation
-    if (request.cookies.get('sessionID') and session_auth(request.cookies)):
-        user_session = request.cookies.get('sessionID')
-        # Useful data that can be accessed from the request object. Data sent as JSON for testing purposes
-        input_data = {
-        'title':request.json['title'],
-        'country':request.json['country'],
-        'content': request.json['content'],
-        'date': datetime.datetime.now()
-        }
-
-        # In order to completed the input_data object with the missing data needed to
-        # insert the post, we can use the session to access the author of the post.
-        input_data['author'] = get_username_from_session(user_session)
-        #input_data['pid'] = get_unused_pid()[0] + 1
-        
-        # Insert the data to tr_post table
-        insert_post(input_data)
-
-        return jsonify(status='post inserted')
-    else:
-        return jsonify(status='bad or no session')
-
 
 def insert_user(data):
     try:
@@ -381,7 +433,6 @@ def pw_hash_salt(unhashed_pw,pw_salt=0):
         hashed_pw += ((num * hashed_pw) + ord(unhashed_pw[i]))
     hashed_salted_pw = hashed_pw + pw_salt 
     return hashed_salted_pw
-
 
 if __name__ == '__main__':
     app.run(port=80, debug=True)

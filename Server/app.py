@@ -63,7 +63,7 @@ def escape(s):
 
 
 def getcon():
-    connStr = "host='localhost' user='postgres' dbname='travelly' password=12345"
+    connStr = "host='localhost' user='postgres' dbname='Travelly' password=password"
     conn=psycopg2.connect(connStr) 
     return conn
 
@@ -201,7 +201,7 @@ def fetch_most_recent_posts():
             "title": post[1],
             "country":post[2],
             "author":post[3],
-            "content": post[4],
+            "content": post[4], 
             "date": post[5]
         })
     return posts_array
@@ -260,6 +260,41 @@ def home():
     print(posts[0]["title"])
     return render_template('home.html', len = len(posts), posts = posts)
 
+@app.route('/api/logout', methods=['POST'])
+def logout():
+    session = request.cookies['sessionID']
+    if (session):
+        conn = getcon()
+        cur = conn.cursor()
+        cur.execute(search_path)
+        cur.execute("DELETE FROM %s WHERE sid=%s", [AsIs('tr_session'), session])
+        conn.commit()
+        return 'Your session has been deleted'
+    
+    return render_template('home.html')
+
+@app.route('/<country>')
+def return_counry_posts(country):
+    country = country.capitalize()
+    conn = getcon()
+    cur = conn.cursor()
+    cur.execute(search_path)
+    cur.execute("SELECT * FROM %s WHERE country=%s", [AsIs('tr_post'), country])
+    conn.commit()
+    res = cur.fetchall()
+    posts = []
+    for p in res:
+        post = {
+            "pid": p[0],
+            "title": p[1],
+            "country": p[2],
+            "username": p[3],
+            "content": p[4],
+            "date": p[5]
+        }
+        posts.append(post)
+    return render_template('country.html', posts = posts)
+
 
 #### IF a user has logged in, they can view the most recent posts from any user in the application.
 @app.route('/user/<username>')
@@ -291,23 +326,23 @@ def profile_page():
 def get_login():
     session = session_auth(request.cookies)
     if (session):
-        return render_template("index.html")
+        return render_template("home.html")
     else:
-        return render_template('login.html'
-                              )
+        return render_template('login.html')
 
 @app.route('/login', methods = ['POST'])
 def post_login():   
     # get csrf token from form and check it against the one in the db for this session ID 
     # if match proceed, if not block. 
+    session = session_auth(request.cookies)
+
     data = {
             'username' : request.form['username'].lower(),
             'password' : request.form['password']
     }
     expire = datetime.datetime.now() + datetime.timedelta(hours=2)
     try:
-
-       sql= "SELECT count(*) from tr_users WHERE username =%s and password= %s"  #The count sends back 0 or 1 as a result, depending on whether the pw and username are correct 
+        sql= "SELECT count(*) from tr_users WHERE username =%s and password= %s"  #The count sends back 0 or 1 as a result, depending on whether the pw and username are correct 
         user_input_password = pw_hash_salt(data['password'], int(get_salt_from_db(data['username'])))
         query_data = (data['username'], str(user_input_password))
         conn = getcon()
@@ -323,6 +358,7 @@ def post_login():
             cur.execute(search_path)
             cur.execute("""DELETE FROM %s WHERE username = %s""",[AsIs('tr_session'), data['username']])
             cur.execute("""INSERT INTO %s VALUES(%s,%s,%s);""", [AsIs('tr_session'), sessionID, data['username'], str(expire)])
+            conn.commit()
             resp = make_response(redirect('/'))
             resp.set_cookie('sessionID', sessionID)
             return resp
@@ -425,7 +461,7 @@ def pw_salt():
     random_digits = '''abcdeg_+]|,./;:>'''
     pw_salt=''
     i = 0 
-   while i <= len(random_digits):
+    while i <= len(random_digits):
         random_digit = random.choice(random_digits)
         pw_salt += str(ord(random_digit))
         i +=1 
@@ -444,13 +480,13 @@ def createRandomId():
     random_digits = 'abcdefghijklmnopABCDEFGHIJKLMNOP123456789'
     sess_id=''
     i = 0 
-    while i<= len(random_digits):
+
+    while i <= len(random_digits):
         random_digit = random.choice(random_digits)
         sess_id += random_digit
         i +=1 
+    
     return sess_id
-
-
 
 if __name__ == '__main__':
     app.run(port=80, debug=True)

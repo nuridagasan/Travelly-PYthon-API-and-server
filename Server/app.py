@@ -25,7 +25,16 @@ import collections
         
 #for the POST request for each page, we then just need to get the CSRF token from the sumitted data and check it in the db against the sessionID 
 
-
+def escape(s):
+    s = s.replace("&", "&amp;")
+    s= s.replace("<", "&lt;")
+    s = s.replace(">", "&gt;")
+    s= s.replace("\"", "&quot;")
+    s= s.replace("'", "&#x27;")
+    s= s.replace("@", "&commat;")
+    s= s.replace("=","&equals;")
+    s= s.replace("`","&grave;")
+    return s 
 
 
 app = Flask(__name__)

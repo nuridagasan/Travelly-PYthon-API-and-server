@@ -254,11 +254,27 @@ def get_user_information(sessionID):
         "email":user_details[3],
     }
 
+#### NEW ROUTES ~~~~~
+
+
+def fetch_five_most_pop():
+    conn = getcon()
+    cur = conn.cursor()
+    cur.execute(search_path)
+    cur.execute("SELECT country FROM %s GROUP BY country ORDER BY COUNT(*) DESC LIMIT 5", [AsIs('tr_post')])
+    conn.commit()
+    resp = cur.fetchall()
+    return resp
+
 @app.route('/')
 def home():
     posts = fetch_most_recent_posts()
-    print(posts[0]["title"])
-    return render_template('home.html', len = len(posts), posts = posts)
+    five_most_popular = fetch_five_most_pop()
+    five_most_pop_string =  " ".join([i[0] for i in five_most_popular])
+    array_for_you_nuri_bro = five_most_pop_string.split()
+    print(array_for_you_nuri_bro)
+    return render_template('home.html', len = len(posts), posts = posts, most_pop = array_for_you_nuri_bro)
+
 
 @app.route('/api/logout', methods=['POST'])
 def logout():
@@ -295,6 +311,8 @@ def return_counry_posts(country):
         posts.append(post)
     return render_template('country.html', posts = posts)
 
+
+#### END NEW ROUTES ~~~~
 
 #### IF a user has logged in, they can view the most recent posts from any user in the application.
 @app.route('/user/<username>')

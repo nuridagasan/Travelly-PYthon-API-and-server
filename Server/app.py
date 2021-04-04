@@ -229,7 +229,9 @@ def fetch_five_most_pop():
     cur.execute("SELECT country FROM %s GROUP BY country ORDER BY COUNT(*) DESC LIMIT 5", [AsIs('tr_post')])
     conn.commit()
     resp = cur.fetchall()
-    return resp
+    five_most_pop_string =  " ".join([i[0] for i in resp])
+    countries = five_most_pop_string.split()
+    return countries
 
 def get_user_information(sessionID):
     conn = getcon()
@@ -251,12 +253,10 @@ def home():
     home_buttons = False
     posts = fetch_most_recent_posts()
     session = session_auth(request.cookies)
-    five_most_popular = fetch_five_most_pop()
-    five_most_pop_string =  " ".join([i[0] for i in five_most_popular])
-    countries = five_most_pop_string.split()
+    countries = fetch_five_most_pop()
     if (session):
         sessionID = request.cookies.get('sessionID')
-        private_user_information = get_user_information(sessionID)
+        #private_user_information = get_user_information(sessionID)
         return render_template('home.html', len = len(posts), posts = posts, create_form = True, home_buttons = True, fav_countries = countries, len_countries = len(countries) )
     else:
         return render_template('home.html', len = len(posts), posts = posts, fav_countries = countries, len_countries = len(countries))
@@ -301,9 +301,10 @@ def logout():
     else:
         return redirect(url_for('login'))   
 
-@app.route('/<country>')
+@app.route('/home/<country>')
 def return_counry_posts(country):
-    country = country.capitalize()
+    session = session_auth(request.cookies)
+    countries = fetch_five_most_pop()
     conn = getcon()
     cur = conn.cursor()
     cur.execute(search_path)
@@ -316,12 +317,17 @@ def return_counry_posts(country):
             "pid": p[0],
             "title": p[1],
             "country": p[2],
-            "username": p[3],
+            "author": p[3],
             "content": p[4],
             "date": p[5]
         }
         posts.append(post)
-    return render_template('country.html', posts = posts)
+    if (session):
+        sessionID = request.cookies.get('sessionID')
+        #private_user_information = get_user_information(sessionID)
+        return render_template('home.html', len = len(posts), posts = posts, create_form = True, home_buttons = True, fav_countries = countries, len_countries = len(countries) )
+    else:
+        return render_template('home.html', len = len(posts), posts = posts, fav_countries = countries, len_countries = len(countries))
 
   
 #### IF a user has logged in, they can view the most recent posts from any user in the application.
@@ -360,8 +366,6 @@ def get_login():
 
 @app.route('/login', methods = ['POST'])
 def post_login():   
-
-
     # get csrf token from form and check it against the one in the db for this session ID 
     # if match proceed, if not block. 
     session = session_auth(request.cookies)

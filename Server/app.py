@@ -243,8 +243,8 @@ def get_user_information(sessionID):
     user_details = cur.fetchone()
     return {
         "username":user_details[0],
-        "firstname":user_details[1],
-        "secondname":user_details[2],
+        "name":user_details[1],
+        "surname":user_details[2],
         "email":user_details[3],
     }
 
@@ -350,9 +350,10 @@ def individual_post(id):
 def profile_page():
     session = session_auth(request.cookies)
     if (session):
-        sessionID = request.cookies.get('sessionID')
+        sessionID = request.cookies.get('sessionID')     
         private_user_information = get_user_information(sessionID)
-        return render_template('profilepage.html', user_information=private_user_information)
+        user_posts = fetch_most_recent_user_posts(private_user_information["username"])
+        return render_template('profile.html', user_info=private_user_information, posts = user_posts, len = len(user_posts))
     else:
         return render_template('login.html')
 

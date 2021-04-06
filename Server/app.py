@@ -515,6 +515,7 @@ def pw_salt():
     while i <= len(random_digits):
         random_digit = random.choice(random_digits)
         pw_salt += str(ord(random_digit))
+        i = i+1
     return int(pw_salt)
 
 def pw_hash_salt(unhashed_pw,pw_salt=0):

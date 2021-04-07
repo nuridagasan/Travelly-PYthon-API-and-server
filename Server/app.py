@@ -36,7 +36,6 @@ def escape(s):
     s= s.replace("`","&grave;")
     return s 
 
-
 app = Flask(__name__)
 app.config['DEBUG'] = True
 search_path = "SET SEARCH_PATH TO travelly;"
@@ -46,12 +45,12 @@ def createRandomId():
     random_digits = 'abcdefghijklmnopABCDEFGHIJKLMNOP123456789'
     sess_id=''
     for i in range(len(random_digits)):
-        random_digit = random.choice(random_digits)
+        random_digit = random.choice(random_digits) 
         sess_id += random_digit
     return sess_id
 
 def getcon():
-    connStr = "host='localhost' user='postgres' dbname='travelly' password=12345"
+    connStr = "host='localhost' user='postgres' dbname='Travelly' password=password"
     conn=psycopg2.connect(connStr) 
     return conn
 
@@ -360,12 +359,9 @@ def get_login():
 
 @app.route('/login', methods = ['POST'])
 def post_login():   
-
-
     # get csrf token from form and check it against the one in the db for this session ID 
     # if match proceed, if not block. 
     session = session_auth(request.cookies)
-
 
     data = {
             'username' : request.form['username'].lower(),
@@ -406,6 +402,7 @@ def signup_form():
     if request.method == 'GET':
         return render_template('signup.html')
     else:
+        print(request.form['password'])
         user_sign_up = {
             'firstname' :  request.form['name'].lower(),
             'lastname' : request.form['surname'].lower(),
@@ -415,17 +412,20 @@ def signup_form():
             'password' : request.form['password'],
             'salt' : pw_salt()
         }
-    #first check user inputs are valid firstname, lastname, username, email and password
-    check_input = input_validation(user_sign_up)
-    if check_input == True:
-        #hash and salt password before sending it to database
-        user_sign_up['password'] = pw_hash_salt(user_sign_up['password'],user_sign_up['salt'])
-        #insert user details to database. It returns a message whether the user is successfully
-        #inserted or not
-        return render_template('signup.html', check_input = insert_user(user_sign_up))
-    else:
-        #Give error message to user
-        return render_template('signup.html', check_input = check_input)
+        #print(user_sign_up)
+        #first check user inputs are valid firstname, lastname, username, email and password
+        check_input = input_validation(user_sign_up)
+        #print(check_input)
+        if check_input == True:
+            #hash and salt password before sending it to database
+            user_sign_up['password'] = pw_hash_salt(user_sign_up['password'],user_sign_up['salt'])
+            #insert user details to database. It returns a message whether the user is successfully
+            #inserted or not
+            return render_template('signup.html', check_input = insert_user(user_sign_up))
+        else:
+            #Give error message to user
+            print('bad entry')
+            return render_template('signup.html', check_input = check_input)
 
 @app.route('/createpost')
 def create_post():
@@ -478,17 +478,17 @@ def pw_hash_salt(unhashed_pw,pw_salt=0):
     hashed_salted_pw = hashed_pw + pw_salt 
     return hashed_salted_pw
 
-def createRandomId():
-    random_digits = 'abcdefghijklmnopABCDEFGHIJKLMNOP123456789'
-    sess_id=''
-    i = 0 
+# def createRandomId():
+#     random_digits = 'abcdefghijklmnopABCDEFGHIJKLMNOP123456789'
+#     sess_id=''
+#     i = 0 
 
-    while i <= len(random_digits):
-        random_digit = random.choice(random_digits)
-        sess_id += random_digit
-        i +=1 
+#     while i <= len(random_digits):
+#         random_digit = random.choice(random_digits)
+#         sess_id += random_digit
+#         i += 1 
     
-    return sess_id
+#     return sess_id
 
 
 if __name__ == '__main__':

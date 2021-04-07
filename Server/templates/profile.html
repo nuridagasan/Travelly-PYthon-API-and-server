@@ -71,19 +71,19 @@
                         <tbody>
                             <tr>
                                 <th scope="row">Name:</th>
-                                <td>{{user_info["name"].title()}}</td>
+                                <td>{{user_info["name"].title() | safe}}</td>
                             </tr>
                             <tr>
                                 <th scope="row">Surname:</th>
-                                <td>{{user_info["surname"].title()}}</td>
+                                <td>{{user_info["surname"].title() | safe}}</td>
                             </tr>
                             <tr>
                                 <th scope="row">Username:</th>
-                                <td>{{user_info["username"].lower()}}</td>
+                                <td>{{user_info["username"].lower() | safe}}</td>
                             </tr>
                             <tr>
                                 <th scope="row">Email</th>
-                                <td>{{user_info["email"].lower()}}</td>
+                                <td>{{user_info["email"].lower() | safe}}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -95,12 +95,12 @@
             {%for i in range(0, len)%}
             <div class="row  justify-content-center">
                 <div class="col-10 p-4 m-3" id="post-content-bg">
-                    <h5 id="post-title p-4">{{posts[i]["title"].title()}}</h5>
+                    <h5 id="post-title p-4">{{posts[i]["title"].title() | safe}}</h5>
                     <span class="d-md-flex top-right-corner p-2"
-                        id="user-country"><i>{{posts[i]["country"].title()}}</i></span>
-                    <p class="p-4"> <span id="author">{{posts[i]["author"].title()}}</span> : {{posts[i]["content"]}}
+                        id="user-country"><i>{{posts[i]["country"].title() | safe}}</i></span>
+                    <p class="p-4"> <span id="author">{{posts[i]["author"].title() | safe}}</span> : {{posts[i]["content"] | safe}}
                     </p>
-                    <span class="d-md-flex bottom-right-corner p-2" id="content-date"><i>{{posts[i]["date"]}}</i></span>
+                    <span class="d-md-flex bottom-right-corner p-2" id="content-date"><i>{{posts[i]["date"] | safe}}</i></span>
                 </div>
             </div>
             {%endfor%}

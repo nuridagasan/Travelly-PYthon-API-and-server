@@ -324,7 +324,6 @@ def return_counry_posts(country):
         posts.append(post)
     if (session):
         sessionID = request.cookies.get('sessionID')
-        #private_user_information = get_user_information(sessionID)
         return render_template('home.html', len = len(posts), posts = posts, create_form = True, home_buttons = True, fav_countries = countries, len_countries = len(countries) )
     else:
         return render_template('home.html', len = len(posts), posts = posts, fav_countries = countries, len_countries = len(countries))

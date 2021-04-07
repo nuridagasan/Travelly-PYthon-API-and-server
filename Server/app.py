@@ -400,6 +400,7 @@ def get_login():
 def post_login():   
     # get csrf token from form and check it against the one in the db for this session ID 
     # if match proceed, if not block. 
+
     user_csrf_token = request.form['csrf_token'].strip("/")
     sessionID= request.cookies.get('sessionID')
     csrf_token= get_csrf_token(sessionID)

@@ -37,6 +37,7 @@
                                 <input type="password" name="password" id="password" class="form-control my-input"
                                     placeholder="Password" required>
                                 <div>
+                                    <input type="hidden" name="csrf_token" value={{csrf_token}}/>
                                     <h5 class="text-danger mt-3">{{check_input}}</h5>
                                 </div>
                                 <div class="text-center py-1 ">

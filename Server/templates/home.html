@@ -116,7 +116,7 @@
               {%for i in range(0, len_countries)%}
               <tr>
                 <th scope="row">{{i+1}}</th>
-                <td>{{fav_countries[i].title()}}</td>
+                <td>{{fav_countries[i].title() | safe}}</td>
                 <td>15</td>
               </tr>
               {%endfor%}
@@ -129,16 +129,15 @@
       {%for i in range(0, len)%}
       <div class="row  justify-content-center">
         <div class="col-10 p-4 m-3" id="post-content-bg">
-          <h5 id="post-title p-4">{{posts[i]["title"].title()}}</h5>
-          <span class="d-md-flex top-right-corner p-2" id="user-country"><i>{{posts[i]["country"].title()}}</i></span>
-          <p class="p-4"> <span id="author">{{posts[i]["author"].title()}}</span> : {{posts[i]["content"]}}
+          <h5 id="post-title p-4">{{posts[i]["title"].title() | safe}}</h5>
+          <span class="d-md-flex top-right-corner p-2" id="user-country"><i>{{posts[i]["country"].title() | safe}}</i></span>
+          <p class="p-4"> <span id="author">{{posts[i]["author"].title() | safe}}</span> : {{posts[i]["content"] | safe}}
           </p>
-          <span class="d-md-flex bottom-right-corner p-2" id="content-date"><i>{{posts[i]["date"]}}</i></span>
+          <span class="d-md-flex bottom-right-corner p-2" id="content-date"><i>{{posts[i]["date"] | safe}}</i></span>
         </div>
       </div>
       {%endfor%}
     </div>
-
 
   </div>
 </body>

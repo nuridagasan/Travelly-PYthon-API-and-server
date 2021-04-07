@@ -12,12 +12,10 @@ CREATE TABLE tr_users (
 		 CONSTRAINT user_pk PRIMARY KEY (username));
 
 CREATE TABLE tr_session (
-    sid          VARCHAR NOT NULL UNIQUE,
-    username       VARCHAR(100) NOT NULL UNIQUE,
+    sid          VARCHAR NOT NULL UNIQUE PRIMARY KEY,
+    username     VARCHAR(100),
     expires      TIMESTAMP NOT NULL,
-		 CONSTRAINT session_pk PRIMARY KEY (sid),
-		 CONSTRAINT session_fk1 FOREIGN KEY (username) REFERENCES tr_users(username)
-		 ON DELETE CASCADE);
+    csrf         VARCHAR UNIQUE);
 
 CREATE TABLE tr_post (
     pid          SERIAL UNIQUE,

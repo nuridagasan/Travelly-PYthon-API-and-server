@@ -191,6 +191,9 @@ def get_unused_pid():
 
 def insert_post(post_info):
     title, country, author, content, date = post_info['title'],post_info['country'],post_info['author'],post_info['content'],post_info['date'],
+    title = escape(title)
+    country = escape(country)
+    content = escape(content)
     conn = getcon()
     cur = conn.cursor()
     cur.execute(search_path)
@@ -536,9 +539,13 @@ def insert_user(data):
     try:
         conn = getcon()
         cur = conn.cursor()
+        username = escape(data['username'])
+        firstname = escape(data['firstname'])
+        lastname = escape(data['lastname'])
+        email = escape(data['email'])
         sql = """SET SEARCH_PATH TO travelly;
                     INSERT INTO tr_users (username, firstname,lastname, email, dob, password, salt) VALUES (%s,%s,%s,%s,%s,%s,%s);"""
-        data = (data['username'], data['firstname'], data['lastname'], data['email'], data['dob'], data['password'], data['salt'])
+        data = (username,firstname, lastname, email, data['dob'], data['password'], data['salt'])
         cur.execute(sql,data)
         conn.commit()
         return 'Your account is successfully created!'

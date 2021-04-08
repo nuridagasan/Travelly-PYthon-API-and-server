@@ -16,7 +16,7 @@ def pw_hash_salt(unhashed_pw,pw_salt=0):
     hashed_pw = 0
     for i in range(0,len(unhashed_pw)):
         hashed_pw += ((num * hashed_pw) + ord(unhashed_pw[i]))
-    hashed_salted_pw = hashed_pw + pw_salt 
+    hashed_salted_pw = str(hashed_pw) + str(pw_salt)
     return hashed_salted_pw
 
 USERS=["Aleida King","Billye Quayle","Mildred Beaty","Adeline Beyers","Tricia Wendel","Kizzy Bedoya","Marx Warn","Hulda Culberson","Devona Morvant","Winston Tomasello","Dede Frame","Lissa Follansbee","Timmy Dapolito","Gracie Lonon","Nana Officer","Yuri Kruchten","Chante Brasch","Edmond Toombs","Scott Schwan","Lean Beauregard","Norberto Petersen","Carole Costigan","Chantel Drumheller","Riva Redfield","Jennie Sandifer","Vivian Cimini","Goldie Hayworth","Tomeka Kimler","Micaela Juan","Jerrold Tjaden","Collene Olson","Edna Serna","Cleveland Miley","Ena Haecker","Huey Voelker","Annamae Basco","Florentina Quinlan","Eryn Chae","Mozella Mcknight"]
@@ -139,7 +139,8 @@ def create_user(name):
 def create_post(author, country):
     content = 'Content for this post'
     title = 'post about %s'%(country)
-    date = datetime.date.today().replace(day=1, month=1) + datetime.timedelta(days=random.randint(0, 365))
+    date = datetime.datetime(2021,1,4) + random.random() * datetime.timedelta(days=1)
+    #date = datetime.date.today().replace(day=1, month=1) + datetime.timedelta(days=random.randint(0, 20))
     return [title, country, author, content, date]
     
  

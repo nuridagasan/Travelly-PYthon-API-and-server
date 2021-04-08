@@ -101,11 +101,16 @@
                     <p class="p-4"> <span id="author">{{posts[i]["author"].title() | safe}}</span> : {{posts[i]["content"] | safe}}
                     </p>
                     <span class="d-md-flex bottom-right-corner p-2" id="content-date"><i>{{posts[i]["date"] | safe}}</i></span>
+                    <form action="/api/deletepost" method='post' target='hiddenFrame'>
+                        <input name='pid' type="hidden" value="{{posts[i].pid}}">
+                        <a href='/profile' onclick="parentNode.submit()">Delete</a>
+                    </form>
                 </div>
             </div>
             {%endfor%}
         </div>
     </div>
+    <iframe name="hiddenFrame" width="0" height="0" border="0" style="display: none;"></iframe>
 </body>
 
 </html>

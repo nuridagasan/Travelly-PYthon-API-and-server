@@ -143,7 +143,6 @@ def session_auth(cookies):
             cur.execute(search_path)
             cur.execute("SELECT username FROM tr_session WHERE sid = %s", [session])
             username = cur.fetchone()[0]
-            print(username)
             if username != 'NULL':
                 return True
             else:
@@ -198,12 +197,12 @@ def insert_post(post_info):
     cur.execute("INSERT INTO tr_post (title, country, author, content, date) VALUES (%s,%s,%s,%s,%s)", [title, country, author, content, date])
     conn.commit()
 
-def fetch_most_recent_posts():
+def fetch_all_posts():
     conn = getcon()
     cur = conn.cursor()
     cur.execute(search_path)
     cur.execute("SELECT * FROM tr_post ORDER BY date DESC")
-    posts = cur.fetchall()[:10]
+    posts = cur.fetchall()
     posts_array = []
     for post in posts:
         posts_array.append({
@@ -283,11 +282,10 @@ def get_csrf_token(sessionID):
     csrf_token = cur.fetchone()[0]
     return csrf_token
 
-
 @app.route('/home', methods = ['GET'])
 def home():
     home_buttons = False
-    posts = fetch_most_recent_posts()
+    posts = fetch_all_posts()
     session = session_auth(request.cookies)
     countries = fetch_five_most_pop()
     if (session):
@@ -300,11 +298,12 @@ def home():
 # Make a post - POST /createpost
 @app.route('/home', methods=['POST'])
 def createpost():
+    print('ran')
     # Check that session exists and is valid. However, this could be removed as this check should be run
     # Before actually accessing the createpost page. To do this, run session auth on the /createpost
     # GET request and either redirect or allow post creation
-    posts = fetch_most_recent_posts()
     if (request.cookies.get('sessionID') and session_auth(request.cookies)):
+        print('ran2')
         user_session = request.cookies.get('sessionID')
         # Useful data that can be accessed from the request object. Data sent as JSON for testing purposes
         input_data = {
@@ -451,6 +450,7 @@ def post_login():
         try:
             sql= "SELECT count(*) from tr_users WHERE username =%s and password= %s"  #The count sends back 0 or 1 as a result, depending on whether the pw and username are correct 
             user_input_password = pw_hash_salt(data['password'], (get_salt_from_db(data['username'])))
+            print(user_input_password)
             query_data = (data['username'], (user_input_password))
             conn = getcon()
             cur = conn.cursor()
@@ -485,7 +485,16 @@ def post_login():
 @app.route('/signup', methods = ['GET','POST'])
 def signup_form():    
     if request.method == 'GET':
-        return render_template('signup.html')
+        session_exists = session_auth_not_loggedin(request.cookies)
+        if session_exists:
+            sessionID= request.cookies.get('sessionID')
+            username= get_username_from_session(sessionID)
+            if username != 'NULL':
+                return redirect(url_for('home'))
+            else:
+                return render_template('signup.html')
+        else:
+            return render_template('signup.html')
     else:
         print(request.form['password'])
         user_sign_up = {
@@ -512,12 +521,15 @@ def signup_form():
             print('bad entry')
             return render_template('signup.html', check_input = check_input)
 
-@app.route('/createpost')
-def create_post():
-    if(session_auth(request.cookies)):
-        return render_template('post.html')
-    else:
-        return render_template('login.html')
+@app.route('/api/deletepost', methods=['POST'])
+def delete_post():
+    pid = request.form['pid']
+    conn = getcon()
+    cur = conn.cursor()
+    cur.execute(search_path)
+    cur.execute("DELETE FROM tr_post WHERE pid=%s", [pid])
+    conn.commit()
+    return 
 
 
 def insert_user(data):
@@ -564,17 +576,17 @@ def pw_hash_salt(unhashed_pw,pw_salt=0):
     hashed_salted_pw = str(hashed_pw) + str(pw_salt)
     return hashed_salted_pw
 
-# def createRandomId():
-#     random_digits = 'abcdefghijklmnopABCDEFGHIJKLMNOP123456789'
-#     sess_id=''
-#     i = 0 
+def createRandomId():
+    random_digits = 'abcdefghijklmnopABCDEFGHIJKLMNOP123456789'
+    sess_id=''
+    i = 0 
 
-#     while i <= len(random_digits):
-#         random_digit = random.choice(random_digits)
-#         sess_id += random_digit
-#         i += 1 
+    while i <= len(random_digits):
+        random_digit = random.choice(random_digits)
+        sess_id += random_digit
+        i += 1 
     
-#     return sess_id
+    return sess_id
 
 
 if __name__ == '__main__':

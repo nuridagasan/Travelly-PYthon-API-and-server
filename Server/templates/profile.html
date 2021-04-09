@@ -103,7 +103,7 @@
                     <span class="d-md-flex bottom-right-corner p-2" id="content-date"><i>{{posts[i]["date"] | safe}}</i></span>
                     <form action="/api/deletepost" method='post' target='hiddenFrame'>
                         <input name='pid' type="hidden" value="{{posts[i].pid}}">
-                        <a href='/profile' onclick="parentNode.submit()">Delete</a>
+                        <a href='/profile' class="btn btn-danger" onclick="parentNode.submit()">Delete</a>
                     </form>
                 </div>
             </div>

@@ -54,7 +54,7 @@ app.config['SECRET_KEY'] = 'Thisisasecret!'
     #return sess_id
 
 def getcon():
-    connStr = "host='localhost' user='postgres' dbname='Travelly' password=password"
+    connStr = "host='localhost' user='postgres' dbname='Travelly' password=12345"
     conn=psycopg2.connect(connStr) 
     return conn
 
@@ -453,7 +453,6 @@ def post_login():
         try:
             sql= "SELECT count(*) from tr_users WHERE username =%s and password= %s"  #The count sends back 0 or 1 as a result, depending on whether the pw and username are correct 
             user_input_password = pw_hash_salt(data['password'], (get_salt_from_db(data['username'])))
-            print(user_input_password)
             query_data = (data['username'], (user_input_password))
             conn = getcon()
             cur = conn.cursor()
@@ -499,7 +498,6 @@ def signup_form():
         else:
             return render_template('signup.html')
     else:
-        print(request.form['password'])
         user_sign_up = {
             'firstname' :  request.form['name'].lower(),
             'lastname' : request.form['surname'].lower(),
@@ -521,7 +519,6 @@ def signup_form():
             return render_template('signup.html', check_input = insert_user(user_sign_up))
         else:
             #Give error message to user
-            print('bad entry')
             return render_template('signup.html', check_input = check_input)
 
 @app.route('/api/deletepost', methods=['POST'])
@@ -559,9 +556,11 @@ def input_validation(user_sign_up):
     elif not bool(re.fullmatch('[A-Za-z]{2,25}( [A-Za-z]{2,25})?', user_sign_up['lastname'])):
         return "Your surname is invalid. Please, type it again."
     elif not bool(re.fullmatch('^[A-Za-z0-9_-]*$', user_sign_up['username'])):    
-        return "Username must include letters and numbers" 
-    elif not bool(re.fullmatch('^(?=.{10,20})(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+*!=]).*$', user_sign_up['password'])): 
+        return "Username must include letters and numbers." 
+    elif not bool(re.fullmatch('^(?=.{10,20})(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+*!=]).*$', user_sign_up['password'])):
         return "Check your password again."
+    elif (user_sign_up['firstname'].lower() in user_sign_up['password'].lower()) or (user_sign_up['lastname'].lower() in user_sign_up['password'].lower()):
+        return "Your password must not include your name or surname."
     else:
         return True
 

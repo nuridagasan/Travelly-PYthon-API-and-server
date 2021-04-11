@@ -54,7 +54,7 @@ app.config['SECRET_KEY'] = 'Thisisasecret!'
     #return sess_id
 
 def getcon():
-    connStr = "host='localhost' user='postgres' dbname='Travelly' password=password"
+    connStr = "host='localhost' user='postgres' dbname='Travelly' password=12345"
     conn=psycopg2.connect(connStr) 
     return conn
 
@@ -392,12 +392,8 @@ def return_counry_posts(country):
 @app.route('/user/<username>')
 def user_page(username):
     session = session_auth(request.cookies)
-    if (session):
-        welcome_message = "Hello " + username 
-        user_posts = fetch_most_recent_user_posts(username)
-        return render_template('userpage.html', message=welcome_message, user_posts=user_posts)
-    else:
-        return render_template('login.html')
+    user_posts = fetch_most_recent_user_posts(escape(username))
+    return render_template('userpage.html', posts=user_posts, len = len(user_posts))
 
 @app.route('/post/<id>')
 def individual_post(id):

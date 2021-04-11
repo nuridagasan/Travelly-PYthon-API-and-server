@@ -54,7 +54,7 @@ app.config['SECRET_KEY'] = 'Thisisasecret!'
     #return sess_id
 
 def getcon():
-    connStr = "host='localhost' user='postgres' dbname='Travelly' password=12345"
+    connStr = "host='localhost' user='postgres' dbname='Travelly' password=password"
     conn=psycopg2.connect(connStr) 
     return conn
 
@@ -276,6 +276,27 @@ def get_user_information(sessionID):
         "surname":user_details[2],
         "email":user_details[3],
     }
+def lockout_or_no_lockout(username):
+    conn = getcon()
+    cur = conn.cursor()
+    cur.execute(search_path)
+    cur.execute("SELECT COUNT(*) FROM tr_lockout WHERE username = %s AND date >= now() - INTERVAL '1 minute'", [username])
+    resp = cur.fetchone()[0]
+    if resp > 3:
+        return True
+    else:
+        return False
+
+def username_right_password_wrong(username, password):
+    cur = getcon().cursor()
+    cur.execute(search_path)
+    cur.execute("SELECT COUNT(*) FROM tr_users WHERE username = %s", [username])
+    username_exists_or_not = cur.fetchone()[0]
+    if (username_exists_or_not != 0):
+        cur.execute("SELECT password from tr_users WHERE username = %s", [username])
+        return True if password != cur.fetchone()[0] else False
+    else:
+        return False
 
 def get_csrf_token(sessionID):
     conn = getcon()
@@ -426,7 +447,7 @@ def get_login():
         csrf_token= createRandomId()
         expire = datetime.datetime.now() + datetime.timedelta(hours=2)
         sql= "INSERT into tr_session VALUES (%s, %s, %s, %s)"
-        data = (sessionID,'NULL',  expire,csrf_token,)
+        data = (sessionID,'NULL', expire, csrf_token,)
         conn = getcon()
         cur = conn.cursor()
         cur.execute(search_path)
@@ -435,7 +456,6 @@ def get_login():
         resp = make_response(render_template('login.html', csrf_token= csrf_token))
         resp.set_cookie('sessionID', sessionID)
         return resp
-
 
 @app.route('/login', methods = ['POST'])
 def post_login():   
@@ -458,8 +478,15 @@ def post_login():
             cur = conn.cursor()
             cur.execute(search_path)
             cur.execute(sql, query_data)
+            conn.commit()
             check_account = cur.fetchone()[0]
             # if there is a result, the pw and username were correct 
+            if (username_right_password_wrong(data['username'], user_input_password)):
+                cur.execute("INSERT INTO tr_lockout VALUES (%s, %s)", [data['username'], datetime.datetime.now()])
+                conn.commit()
+            if (lockout_or_no_lockout(data['username'])):
+                return render_template('login.html', check_input = 'Your account has been temporarily locked out', csrf_token= csrf_token)
+            
             if check_account != 0:
                 conn = getcon()
                 cur = conn.cursor()

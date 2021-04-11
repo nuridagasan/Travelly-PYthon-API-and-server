@@ -38,5 +38,10 @@ CREATE TABLE tr_comment (
 		 CONSTRAINT comment_fk1 FOREIGN KEY (author) REFERENCES tr_users(username)
 		 ON DELETE CASCADE,
  		 CONSTRAINT comment_fk2 FOREIGN KEY (pid) REFERENCES tr_post
-		 ON DELETE CASCADE );	
+		 ON DELETE CASCADE );
+
+CREATE TABLE tr_lockout (
+    username VARCHAR(50) NOT NULL,
+    date TIMESTAMP NOT NULL
+)	
 

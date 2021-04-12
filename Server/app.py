@@ -85,7 +85,7 @@ def check_if_record_exists(table, column, string):
         print(e)
 
 def insert_sessionID(sessionID, column, username):
-    expire = datetime.datetime.now() + datetime.timedelta(hours=2)
+    expire = datetime.datetime.now() + datetime.timedelta(hours=0.5)
     conn = getcon()
     cur = conn.cursor()
     cur.execute(search_path)
@@ -129,7 +129,6 @@ def insert_session(sid, username, time):
     cur.execute("""INSERT INTO %s VALUES(%s,%s,%s);""", [AsIs('tr_session'), sid, username, time])
     conn.commit()
     return 
-
 def session_auth(cookies):
     session = cookies.get('sessionID')
     if (session):
@@ -141,11 +140,21 @@ def session_auth(cookies):
         conn.commit()
         if (resp):
             cur.execute(search_path)
-            cur.execute("SELECT username FROM tr_session WHERE sid = %s", [session])
-            username = cur.fetchone()[0]
-            if username != 'NULL':
-                return True
+            cur.execute("SELECT expires FROM tr_session WHERE sid = %s", [session])
+            conn.commit()
+            expires = cur.fetchone()[0]
+            if datetime.datetime.now() < expires:
+                cur.execute(search_path)
+                cur.execute("SELECT username FROM tr_session WHERE sid = %s", [session])
+                username = cur.fetchone()[0]
+                if username != 'NULL':
+                    return True
+                else:
+                    return False
             else:
+                cur.execute(search_path)
+                cur.execute("DELETE FROM %s WHERE sid=%s", [AsIs('tr_session'), session])
+                conn.commit() 
                 return False
         else:
             return False
@@ -371,7 +380,7 @@ def logout():
         conn.commit() 
         return redirect(url_for('home'))
     else:
-        return redirect(url_for('login'))   
+        return redirect(url_for('get_login'))   
 
 @app.route('/home/<country>')
 def return_counry_posts(country):
@@ -396,7 +405,7 @@ def return_counry_posts(country):
         posts.append(post)
     if (session):
         sessionID = request.cookies.get('sessionID')
-        return render_template('home.html', len = len(posts), posts = posts, create_form = True, home_buttons = True, fav_countries = countries, len_countries = len(countries) )
+        return render_template('home.html', len = len(posts), posts = posts, create_form = False, home_buttons = True, fav_countries = countries, len_countries = len(countries) )
     else:
         return render_template('home.html', len = len(posts), posts = posts, fav_countries = countries, len_countries = len(countries))
 
@@ -422,7 +431,7 @@ def profile_page():
         user_posts = fetch_most_recent_user_posts(private_user_information["username"])
         return render_template('profile.html', user_info=private_user_information, posts = user_posts, len = len(user_posts))
     else:
-        return render_template('login.html')
+        return redirect(url_for('get_login'))   
 
 @app.route('/login')
 def get_login(): 
@@ -440,7 +449,7 @@ def get_login():
             conn.commit() 
             sessionID= createRandomId()
             csrf_token= createRandomId()
-            expire = datetime.datetime.now() + datetime.timedelta(hours=2)
+            expire = datetime.datetime.now() + datetime.timedelta(hours=0.5)
             sql= "INSERT into tr_session VALUES (%s, %s, %s, %s)"
             data = (sessionID,'NULL', expire,csrf_token)
             conn = getcon()
@@ -454,7 +463,7 @@ def get_login():
     else:
         sessionID= createRandomId()
         csrf_token= createRandomId()
-        expire = datetime.datetime.now() + datetime.timedelta(hours=2)
+        expire = datetime.datetime.now() + datetime.timedelta(hours=0.5)
         sql= "INSERT into tr_session VALUES (%s, %s, %s, %s)"
         data = (sessionID,'NULL', expire, csrf_token,)
         conn = getcon()
@@ -478,7 +487,7 @@ def post_login():
                 'username' : request.form['username'].lower(),
                 'password' : request.form['password']
         }
-        expire = datetime.datetime.now() + datetime.timedelta(hours=2)
+        expire = datetime.datetime.now() + datetime.timedelta(hours=0.5)
         try:
             sql= "SELECT count(*) from tr_users WHERE username =%s and password= %s"  #The count sends back 0 or 1 as a result, depending on whether the pw and username are correct 
             user_input_password = pw_hash_salt(data['password'], (get_salt_from_db(data['username'])))

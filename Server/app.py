@@ -314,8 +314,16 @@ def home():
     countries = fetch_five_most_pop()
     if (session):
         sessionID = request.cookies.get('sessionID')
+        csrf_token = createRandomId()
+        conn = getcon()
+        cur = conn.cursor()
+        cur.execute(search_path)
+        sql= "UPDATE tr_session SET csrf = %s WHERE sid= %s"
+        data = (csrf_token, sessionID)
+        cur.execute(sql,data)
+        conn.commit()
         #private_user_information = get_user_information(sessionID)
-        return render_template('home.html', len = len(posts), posts = posts, create_form = True, home_buttons = True, fav_countries = countries, len_countries = len(countries) )
+        return render_template('home.html', len = len(posts), posts = posts, create_form = True, home_buttons = True, fav_countries = countries, len_countries = len(countries), csrf_token= csrf_token)
     else:
         return render_template('home.html', len = len(posts), posts = posts, fav_countries = countries, len_countries = len(countries))
 
@@ -327,23 +335,28 @@ def createpost():
     # Before actually accessing the createpost page. To do this, run session auth on the /createpost
     # GET request and either redirect or allow post creation
     if (request.cookies.get('sessionID') and session_auth(request.cookies)):
-        print('ran2')
-        user_session = request.cookies.get('sessionID')
-        # Useful data that can be accessed from the request object. Data sent as JSON for testing purposes
-        input_data = {
-        'title': str(request.form['post-title'].lower()),
-        'country': str(request.form.get('country').lower()),
-        'content': str(request.form['post-content'].lower()),
-        'date': datetime.datetime.now()
-        }
+        sessionID= request.cookies.get('sessionID') 
+        user_csrf_token= get_csrf_token(sessionID)
+        csrf_token_received = request.form['csrf_token'].strip('/')
+        if user_csrf_token == csrf_token_received:
+            user_session = request.cookies.get('sessionID')
+            # Useful data that can be accessed from the request object. Data sent as JSON for testing purposes
+            input_data = {
+            'title': str(request.form['post-title'].lower()),
+            'country': str(request.form.get('country').lower()),
+            'content': str(request.form['post-content'].lower()),
+            'date': datetime.datetime.now()
+            }
 
-        # In order to completed the input_data object with the missing data needed to
-        # insert the post, we can use the session to access the author of the post.
-        input_data['author'] = get_username_from_session(user_session)
-        #input_data['pid'] = get_unused_pid()[0] + 1
-        # Insert the data to tr_post table
-        insert_post(input_data)
-        return redirect(url_for('home'))
+            # In order to completed the input_data object with the missing data needed to
+            # insert the post, we can use the session to access the author of the post.
+            input_data['author'] = get_username_from_session(user_session)
+            #input_data['pid'] = get_unused_pid()[0] + 1
+            # Insert the data to tr_post table
+            insert_post(input_data)
+            return redirect(url_for('home'))
+        else:
+            return jsonify(status='csrf tokens do not match')
     else:
         return jsonify(status='bad or no session')
 

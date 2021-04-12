@@ -30,14 +30,14 @@
                     <div class="myform form ">
                         <form action="/login" method="post" name="login" id="login-form">
                             <div class="form-group">
+                                <input type="hidden" name="csrf_token" value={{csrf_token}}/>
                                 <input type="text" name="username" class="form-control my-input" id="user-name"
                                     placeholder="Username" pattern="[a-zA-Z0-9-]+" required>
                             </div>
                             <div class="form-group">
                                 <input type="password" name="password" id="password" class="form-control my-input"
                                     placeholder="Password" required>
-                                <div>
-                                    <input type="hidden" name="csrf_token" value={{csrf_token}}/>
+                                <div>                  
                                     <h5 class="text-danger mt-3">{{check_input}}</h5>
                                 </div>
                                 <div class="text-center py-1 ">

@@ -8,7 +8,6 @@ import json
 import datetime
 import collections
 
-
 # so that we can implement csrf tokens, we need to create a session as soon as someone visits the login or create a post page (if they don't have one already). 
 # with GET request for each page, we can:
 
@@ -43,7 +42,6 @@ app.config['DEBUG'] = True
 search_path = "SET SEARCH_PATH TO travelly;"
 app.config['SECRET_KEY'] = 'Thisisasecret!'
 
-
 # there's another copy of this function further down 
 #def createRandomId():
  #   random_digits = 'abcdefghijklmnopABCDEFGHIJKLMNOP123456789'
@@ -54,7 +52,7 @@ app.config['SECRET_KEY'] = 'Thisisasecret!'
     #return sess_id
 
 def getcon():
-    connStr = "host='localhost' user='postgres' dbname='Travelly' password=12345"
+    connStr = "host='localhost' user='postgres' dbname='Travelly' password=password"
     conn=psycopg2.connect(connStr) 
     return conn
 
@@ -276,6 +274,7 @@ def get_user_information(sessionID):
         "surname":user_details[2],
         "email":user_details[3],
     }
+
 def lockout_or_no_lockout(username):
     conn = getcon()
     cur = conn.cursor()
@@ -322,12 +321,10 @@ def home():
 # Make a post - POST /createpost
 @app.route('/home', methods=['POST'])
 def createpost():
-    print('ran')
     # Check that session exists and is valid. However, this could be removed as this check should be run
     # Before actually accessing the createpost page. To do this, run session auth on the /createpost
     # GET request and either redirect or allow post creation
     if (request.cookies.get('sessionID') and session_auth(request.cookies)):
-        print('ran2')
         user_session = request.cookies.get('sessionID')
         # Useful data that can be accessed from the request object. Data sent as JSON for testing purposes
         input_data = {
@@ -546,13 +543,17 @@ def signup_form():
 
 @app.route('/api/deletepost', methods=['POST'])
 def delete_post():
-    pid = request.form['pid']
-    conn = getcon()
-    cur = conn.cursor()
-    cur.execute(search_path)
-    cur.execute("DELETE FROM tr_post WHERE pid=%s", [pid])
-    conn.commit()
-    return 
+    session = session_auth(request.cookies)
+    if (session):
+        pid = request.form['pid']
+        conn = getcon()
+        cur = conn.cursor()
+        cur.execute(search_path)
+        cur.execute("DELETE FROM tr_post WHERE pid=%s", [pid])
+        conn.commit()
+        return 
+    else:
+        return
 
 
 def insert_user(data):

@@ -314,6 +314,25 @@ def get_username_from_pid(pid):
     username = cur.fetchone()
     return username[0] if username != None else None
 
+def is_admin(username):
+    conn = getcon()
+    cur = conn.cursor()
+    cur.execute(search_path)
+    cur.execute("SELECT COUNT(*) FROM tr_users WHERE username = %s AND admin = 'true'", [username])
+    res = cur.fetchone()
+    return res[0]
+
+def session_is_admin(cookies):
+    sessionID = cookies.get('sessionID')
+    if (sessionID):
+        conn = getcon()
+        cur = conn.cursor()
+        cur.execute(search_path)
+        username = get_username_from_session(sessionID)
+        if (username and is_admin(username)):
+            return True
+    else:
+        return False
 @app.route('/home', methods = ['GET'])
 def home():
     home_buttons = False
@@ -331,7 +350,7 @@ def home():
         cur.execute(sql,data)
         conn.commit()
         #private_user_information = get_user_information(sessionID)
-        return render_template('home.html', len = len(posts), posts = posts, create_form = True, home_buttons = True, fav_countries = countries, len_countries = len(countries), csrf_token= csrf_token)
+        return render_template('home.html', len = len(posts), posts = posts, create_form = True, home_buttons = True, fav_countries = countries, len_countries = len(countries), csrf_token= csrf_token, admin_btn=True if is_admin(get_username_from_session(request.cookies.get('sessionID'))) else False)
     else:
         return render_template('home.html', len = len(posts), posts = posts, fav_countries = countries, len_countries = len(countries))
 
@@ -566,6 +585,7 @@ def signup_form():
 
 
 
+
 @app.route('/api/deletepost', methods=['POST'])
 def delete_post():
     #session = session_auth(request.cookies)
@@ -575,8 +595,7 @@ def delete_post():
     if (sessionID != None and session_auth(request.cookies)):
         username_from_session = get_username_from_session(sessionID)
         username_from_pid = get_username_from_pid(pid)
-        print(username_from_pid, username_from_session, pid, sessionID)
-        if ((username_from_session != None and username_from_pid != None) and (username_from_session == username_from_pid)):
+        if (((username_from_session != None and username_from_pid != None) and (username_from_session == username_from_pid)) or (is_admin(get_username_from_session(sessionID)))):
             conn = getcon()
             cur = conn.cursor()
             cur.execute(search_path)
@@ -588,19 +607,35 @@ def delete_post():
         return 
     return
 
-def session_is_admin(cookies):
-    sessionID = cookies.get('sessionID')
-    if (sessionID):
+@app.route('/api/deleteuser', methods=['POST'])
+def del_user():
+    sessionID = request.cookies.get('sessionID')
+    user_to_delete = request.json['user']
+    if (sessionID and is_admin(get_username_from_session(sessionID)) and user_to_delete != 'tradmin'):
         conn = getcon()
         cur = conn.cursor()
-        
+        cur.execute(search_path)
+        cur.execute("DELETE FROM tr_users WHERE username = %s", [user_to_delete])
+        conn.commit()
+        return
     else:
-        return False
+        return
+
+def fetch_users():
+    conn = getcon()
+    cur = conn.cursor()
+    cur.execute(search_path)
+    cur.execute("SELECT username, firstname, lastname, email FROM tr_users")
+    conn.commit()
+    res = cur.fetchall()
+    return res
 
 @app.route('/admin', methods=['GET'])
 def admin_page():
     if (session_is_admin(request.cookies)):
-        return 'is admin'
+        list_of_users = fetch_users()
+        user_posts = fetch_all_posts()
+        return render_template('admin.html', users = list_of_users, posts = user_posts)
     else:
         return redirect('login')
 

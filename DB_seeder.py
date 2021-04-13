@@ -162,7 +162,7 @@ try:
     
     for user in USERS:
         cur.execute("INSERT INTO tr_users (username,firstname,lastname,email,dob,password,salt) VALUES (%s,%s,%s,%s,%s,%s,%s)", create_user(user))
-    cur.execute("INSERT INTO tr_users (username,firstname,lastname,email,dob,admin,password,salt) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)", ['tr_admin','admin','admin','admin@admin.com','01/01/1900','true',pw_hash_salt('bubblebath', 12345),12345])
+    cur.execute("INSERT INTO tr_users (username,firstname,lastname,email,dob,admin,password,salt) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)", ['tradmin','admin','admin','admin@admin.com','01/01/1900','true',pw_hash_salt('bubblebath', 12345),12345])
     cur.execute("SELECT username FROM tr_users")
     users = cur.fetchall()
     

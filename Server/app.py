@@ -305,6 +305,15 @@ def get_csrf_token(sessionID):
     csrf_token = cur.fetchone()[0]
     return csrf_token
 
+def get_username_from_pid(pid):
+    conn = getcon()
+    cur = conn.cursor()
+    cur.execute(search_path)
+    cur.execute("SELECT author FROM tr_post WHERE pid = %s", [pid])
+    conn.commit()
+    username = cur.fetchone()
+    return username[0] if username != None else None
+
 @app.route('/home', methods = ['GET'])
 def home():
     home_buttons = False
@@ -313,8 +322,16 @@ def home():
     countries = fetch_five_most_pop()
     if (session):
         sessionID = request.cookies.get('sessionID')
+        csrf_token = createRandomId()
+        conn = getcon()
+        cur = conn.cursor()
+        cur.execute(search_path)
+        sql= "UPDATE tr_session SET csrf = %s WHERE sid= %s"
+        data = (csrf_token, sessionID)
+        cur.execute(sql,data)
+        conn.commit()
         #private_user_information = get_user_information(sessionID)
-        return render_template('home.html', len = len(posts), posts = posts, create_form = True, home_buttons = True, fav_countries = countries, len_countries = len(countries) )
+        return render_template('home.html', len = len(posts), posts = posts, create_form = True, home_buttons = True, fav_countries = countries, len_countries = len(countries), csrf_token= csrf_token)
     else:
         return render_template('home.html', len = len(posts), posts = posts, fav_countries = countries, len_countries = len(countries))
 
@@ -325,22 +342,28 @@ def createpost():
     # Before actually accessing the createpost page. To do this, run session auth on the /createpost
     # GET request and either redirect or allow post creation
     if (request.cookies.get('sessionID') and session_auth(request.cookies)):
-        user_session = request.cookies.get('sessionID')
-        # Useful data that can be accessed from the request object. Data sent as JSON for testing purposes
-        input_data = {
-        'title': str(request.form['post-title'].lower()),
-        'country': str(request.form.get('country').lower()),
-        'content': str(request.form['post-content'].lower()),
-        'date': datetime.datetime.now()
-        }
+        sessionID= request.cookies.get('sessionID') 
+        user_csrf_token= get_csrf_token(sessionID)
+        csrf_token_received = request.form['csrf_token'].strip('/')
+        if user_csrf_token == csrf_token_received:
+            user_session = request.cookies.get('sessionID')
+            # Useful data that can be accessed from the request object. Data sent as JSON for testing purposes
+            input_data = {
+            'title': str(request.form['post-title'].lower()),
+            'country': str(request.form.get('country').lower()),
+            'content': str(request.form['post-content'].lower()),
+            'date': datetime.datetime.now()
+            }
 
-        # In order to completed the input_data object with the missing data needed to
-        # insert the post, we can use the session to access the author of the post.
-        input_data['author'] = get_username_from_session(user_session)
-        #input_data['pid'] = get_unused_pid()[0] + 1
-        # Insert the data to tr_post table
-        insert_post(input_data)
-        return redirect(url_for('home'))
+            # In order to completed the input_data object with the missing data needed to
+            # insert the post, we can use the session to access the author of the post.
+            input_data['author'] = get_username_from_session(user_session)
+            #input_data['pid'] = get_unused_pid()[0] + 1
+            # Insert the data to tr_post table
+            insert_post(input_data)
+            return redirect(url_for('home'))
+        else:
+            return jsonify(status='csrf tokens do not match')
     else:
         return jsonify(status='bad or no session')
 
@@ -541,20 +564,45 @@ def signup_form():
             #Give error message to user
             return render_template('signup.html', check_input = check_input)
 
+
+
 @app.route('/api/deletepost', methods=['POST'])
 def delete_post():
-    session = session_auth(request.cookies)
-    if (session):
-        pid = request.form['pid']
+    #session = session_auth(request.cookies)
+    pid = request.json['pid']
+    # Check that username from session is equal to username of the post
+    sessionID = request.cookies.get('sessionID')
+    if (sessionID != None and session_auth(request.cookies)):
+        username_from_session = get_username_from_session(sessionID)
+        username_from_pid = get_username_from_pid(pid)
+        print(username_from_pid, username_from_session, pid, sessionID)
+        if ((username_from_session != None and username_from_pid != None) and (username_from_session == username_from_pid)):
+            conn = getcon()
+            cur = conn.cursor()
+            cur.execute(search_path)
+            cur.execute("DELETE FROM tr_post WHERE pid=%s", [pid])
+            conn.commit()
+            return
+        else:
+            return
+        return 
+    return
+
+def session_is_admin(cookies):
+    sessionID = cookies.get('sessionID')
+    if (sessionID):
         conn = getcon()
         cur = conn.cursor()
-        cur.execute(search_path)
-        cur.execute("DELETE FROM tr_post WHERE pid=%s", [pid])
-        conn.commit()
-        return 
+        
     else:
-        return
+        return False
 
+@app.route('/admin', methods=['GET'])
+def admin_page():
+    if (session_is_admin(request.cookies)):
+        return 'is admin'
+    else:
+        return redirect('login')
 
 def insert_user(data):
     try:

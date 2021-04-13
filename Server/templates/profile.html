@@ -101,9 +101,9 @@
                     <p class="p-4"> <span id="author">{{posts[i]["author"].title() | safe}}</span> : {{posts[i]["content"] | safe}}
                     </p>
                     <span class="d-md-flex bottom-right-corner p-2" id="content-date"><i>{{posts[i]["date"] | safe}}</i></span>
-                    <form action="/api/deletepost" method='post' target='hiddenFrame'>
+                    <form class='postform' method='POST' target="hiddenFrame">
                         <input name='pid' type="hidden" value="{{posts[i].pid}}">
-                        <a href='/profile' class="btn btn-danger" onclick="parentNode.submit()">Delete</a>
+                        <button type='submit' class="btn btn-danger">Delete</button>
                     </form>
                 </div>
             </div>
@@ -112,5 +112,17 @@
     </div>
     <iframe name="hiddenFrame" width="0" height="0" border="0" style="display: none;"></iframe>
 </body>
-
+<script>
+    const forms = document.querySelectorAll('form');
+    forms.forEach(form => {
+        form.addEventListener('submit', async e => {
+            e.preventDefault();
+            pid = form.elements['pid'].value
+            const call = await fetch('/api/deletepost', {method:'POST', headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+        }, body: JSON.stringify({pid:pid})}).then(resp => location.reload())
+        })
+    })
+</script>
 </html>

@@ -7,6 +7,7 @@ CREATE TABLE tr_users (
     lastname     VARCHAR(20) NOT NULL,
     email        VARCHAR(256) NOT NULL UNIQUE,
     dob          DATE NOT NULL,
+    admin        BOOLEAN NOT NULL DEFAULT False,
     password 	 VARCHAR(64) NOT NULL,	
     salt         VARCHAR(64) NOT NULL,
 		 CONSTRAINT user_pk PRIMARY KEY (username));

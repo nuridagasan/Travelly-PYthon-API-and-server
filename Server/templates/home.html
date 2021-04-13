@@ -73,6 +73,7 @@
         <div class="col-xl-6 col-lg-6 mt-4 table-bg">
           <form method="POST">
             <div class="form-group pt-4">
+              <input  name="csrf_token" type="hidden" value= {{ csrf_token }} />
               <input class="form-control" name="post-title" type="text" placeholder="Post Title" required>
             </div>
             <div class="form-group m-0">

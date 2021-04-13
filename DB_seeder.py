@@ -161,15 +161,15 @@ try:
     cur.execute(file_p.read())
     
     for user in USERS:
-        cur.execute("INSERT INTO tr_users VALUES (%s,%s,%s,%s,%s,%s,%s)", create_user(user))
-
+        cur.execute("INSERT INTO tr_users (username,firstname,lastname,email,dob,password,salt) VALUES (%s,%s,%s,%s,%s,%s,%s)", create_user(user))
+    cur.execute("INSERT INTO tr_users (username,firstname,lastname,email,dob,admin,password,salt) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)", ['tr_admin','admin','admin','admin@admin.com','01/01/1900','true',pw_hash_salt('bubblebath', 12345),12345])
     cur.execute("SELECT username FROM tr_users")
     users = cur.fetchall()
     
     for country in COUNTRIES:
         user = random.choice(users)
         cur.execute("INSERT INTO tr_post (title, country, author, content, date) VALUES (%s,%s,%s,%s,%s)", create_post(user, country))
-        
+    
     conn.commit()
     conn.close()
 

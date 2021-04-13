@@ -7,7 +7,7 @@ def getConn():
     #pw = pwFile.read()
     #pwFile.close()
     connStr = "host=localhost \
-               dbname=Travelly user=postgres password = " + "password"
+               dbname=Travelly user=postgres password = " + "12345"
     conn=psycopg2.connect(connStr)      
     return  conn
 

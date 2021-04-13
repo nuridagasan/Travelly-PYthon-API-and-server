@@ -52,7 +52,7 @@ app.config['SECRET_KEY'] = 'Thisisasecret!'
     #return sess_id
 
 def getcon():
-    connStr = "host='localhost' user='postgres' dbname='Travelly' password=password"
+    connStr = "host='localhost' user='postgres' dbname='Travelly' password=12345"
     conn=psycopg2.connect(connStr) 
     return conn
 

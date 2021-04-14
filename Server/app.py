@@ -37,6 +37,16 @@ def escape(s):
     s= s.replace("`","&grave;")
     return s 
 
+def escape_email(s):
+    s = s.replace("&", "&amp;")
+    s= s.replace("<", "&lt;")
+    s = s.replace(">", "&gt;")
+    s= s.replace("\"", "&quot;")
+    s= s.replace("'", "&#x27;")
+    s= s.replace("=","&equals;")
+    s= s.replace("`","&grave;")
+    return s 
+
 app = Flask(__name__)
 app.config['DEBUG'] = True
 search_path = "SET SEARCH_PATH TO travelly;"
@@ -415,7 +425,7 @@ def return_counry_posts(country):
     conn = getcon()
     cur = conn.cursor()
     cur.execute(search_path)
-    cur.execute("SELECT * FROM %s WHERE country=%s", [AsIs('tr_post'), country])
+    cur.execute("SELECT * FROM %s WHERE country=%s", [AsIs('tr_post'), escape(country)])
     conn.commit()
     res = cur.fetchall()
     posts = []
@@ -655,7 +665,7 @@ def insert_user(data):
         username = escape(data['username'])
         firstname = escape(data['firstname'])
         lastname = escape(data['lastname'])
-        email = escape(data['email'])
+        email = escape_email(data['email'])
         sql = """SET SEARCH_PATH TO travelly;
                     INSERT INTO tr_users (username, firstname,lastname, email, dob, password, salt) VALUES (%s,%s,%s,%s,%s,%s,%s);"""
         data = (username,firstname, lastname, email, data['dob'], data['password'], data['salt'])

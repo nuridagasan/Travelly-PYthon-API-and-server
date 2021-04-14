@@ -61,4 +61,17 @@ font-size : 1.4rem!important;
 background-color: #f8f8f8!important;
 box-shadow: 1px 1px 1px 1px;
 }
-  
+
+.text-color-red {
+    color:red;
+}
+
+/* Beginning of the table styles  */
+.table-scrollbar {
+    position: relative;
+    height: 500px;
+    overflow: auto;
+}
+.table-scroll-y {
+display: block;
+}

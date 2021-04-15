@@ -655,6 +655,98 @@ def del_user():
     else:
         return
 
+@app.route('/accountrecovery', methods=['GET'])
+def get_account_recover():
+    return render_template('accountrecovery.html', recovery_form = True, question_form = False)
+
+@app.route('/accountrecovery', methods=['POST'])
+def post_account_recover():
+    account_recovery = {
+            'email' : escape_email(request.form['email'].lower()),
+            'dob' : escape(request.form['birthdate'])
+    }
+    user_credentials = check_email_dob(account_recovery)
+    if user_credentials:
+        recovery_question = user_credentials[0][7]
+        return render_template('accountrecovery.html', recovery_form = False, question_form = True, recovery_question = recovery_question)
+    else: 
+        return render_template('accountrecovery.html', check_input = "Please, check your credentials again!")
+
+@app.route('/resetpassword', methods=['POST'])
+def check_account_answer():
+    user_answer = {
+        'username' : escape(request.form['username'].lower()),
+        'recovery-answer' :  escape(request.form['recovery-answer'].lower())
+    }
+    user_name = user_answer['username']
+    user_credentials = check_username(user_name)
+    if user_name:
+        recovery_answer = user_credentials[0][8]
+        user_salt = user_credentials[0][9]
+        user_input_salted_answer = pw_hash_salt(user_answer['recovery-answer'],user_salt)
+        if user_input_salted_answer == recovery_answer:
+            return render_template('accountrecovery.html', question_form = False, password_form = True)
+        else:
+            return render_template('accountrecovery.html', question_form = True, check_input = "Please, check your username or answer again!")
+    else:
+        return render_template('accountrecovery.html', question_form = True, check_input = "Please, check your username or answer again!")
+
+@app.route('/createnewpassword', methods=['POST'])
+def reset_user_password():
+    reset_password = {
+        'username' : escape(request.form['username'].lower()),
+        'new_password' : request.form['password'],
+        'salt' : pw_salt()
+    }
+    user_data = check_username(reset_password['username'])
+    if user_data and is_valid_password(user_data,reset_password['new_password']):
+        username = user_data[0][0]
+        salted_pw = pw_hash_salt(reset_password['new_password'],reset_password['salt'])
+        update_password(username,salted_pw,reset_password['salt'])
+        return render_template('accountrecovery.html', password_form = False, validated_password = True )
+    else:
+        return render_template('accountrecovery.html', password_form = True, check_input = True)
+
+def is_valid_password(user_data, password):
+    firstname = user_data[0][1]
+    lastname = user_data[0][2]
+    if (firstname.lower() in password.lower()) or (lastname.lower() in password.lower()):
+        return False
+    elif not bool(re.fullmatch('^(?=.{10,20})(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+*!=]).*$', password)):
+        return False
+    else:
+        return True
+
+def check_email_dob(account_recovery):
+    conn = getcon()
+    cur = conn.cursor()
+    cur.execute(search_path)
+    sql = """SELECT * FROM tr_users WHERE email = %s and dob = %s;"""
+    data = (account_recovery['email'], account_recovery['dob'])
+    cur.execute(sql,data)
+    conn.commit()
+    res = cur.fetchall()
+    return res    
+
+def check_username(user_name):
+    conn = getcon()
+    cur = conn.cursor()
+    cur.execute(search_path)
+    sql = """SELECT * FROM tr_users WHERE username =  '%s' """ % user_name
+    cur.execute(sql)
+    conn.commit()
+    res = cur.fetchall()
+    return res    
+
+def update_password(username,password,salt):
+    conn = getcon()
+    cur = conn.cursor()
+    cur.execute(search_path)
+    sql = """UPDATE tr_users SET (password, salt) = (%s, %s) WHERE username = %s """
+    data = (password, salt, username)
+    cur.execute(sql,data)
+    conn.commit()   
+
 def fetch_users():
     conn = getcon()
     cur = conn.cursor()

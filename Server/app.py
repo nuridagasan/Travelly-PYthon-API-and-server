@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, url_for, jsonify, redirect, session, render_template, make_response, redirect, render_template
+from flask import Flask, jsonify, request, url_for, jsonify, redirect, session, render_template, make_response, redirect, render_template, abort
 import re
 import random
 from psycopg2.extensions import AsIs
@@ -25,6 +25,7 @@ import collections
 #for the POST request for each page, we then just need to get the CSRF token from the sumitted data and check it in the db against the sessionID 
 
 # Look at checking to make sure session is still valid before carrying out actions- at the moment session is only removed at logout? 
+
 
 def escape(s):
     s = s.replace("&", "&amp;")
@@ -352,6 +353,16 @@ def session_is_admin(cookies):
             return True
     else:
         return False
+
+@app.errorhandler(404)
+def page_not_found(e):
+    # note that we set the 404 status explicitly
+    return render_template('notfound.html'), 404
+
+@app.route('/notfound')
+def error_test():
+    abort(404)
+
 @app.route('/home', methods = ['GET'])
 def home():
     home_buttons = False
@@ -407,7 +418,11 @@ def createpost():
 
 @app.route('/logout', methods=['GET'])
 def logout():
-    session = request.cookies['sessionID']
+    try:
+        session = request.cookies['sessionID']
+    except: 
+        return redirect(url_for('get_login'))
+
     if (session and request.method == 'GET'):
         conn = getcon()
         cur = conn.cursor()
@@ -656,7 +671,7 @@ def admin_page():
         user_posts = fetch_all_posts()
         return render_template('admin.html', users = list_of_users, posts = user_posts)
     else:
-        return redirect('login')
+        return render_template('notfound.html')
 
 def insert_user(data):
     try:

@@ -321,6 +321,7 @@ def lockout_or_no_lockout(username):
     cur.execute(search_path)
     cur.execute("SELECT COUNT(*) FROM tr_lockout WHERE username = %s AND date >= now() - INTERVAL '1 minute'", [username])
     resp = cur.fetchone()[0]
+    print(resp)
     if resp > 3:
         return True
     else:
@@ -570,6 +571,8 @@ def post_login():
             conn.commit()
             check_account = cur.fetchone()[0]
             # if there is a result, the pw and username were correct 
+            print(request.environ.get('HTTP_X_REAL_IP', request.remote_addr))
+            print(ip_ban_or_no_ip_ban(request.environ.get('HTTP_X_REAL_IP', request.remote_addr)))
             if (ip_ban_or_no_ip_ban(request.environ.get('HTTP_X_REAL_IP', request.remote_addr))):
                 return render_template('login.html', check_input = 'IP BANNED', csrf_token= csrf_token)
 

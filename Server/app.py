@@ -52,7 +52,7 @@ app.config['SECRET_KEY'] = 'Thisisasecret!'
     #return sess_id
 
 def getcon():
-    connStr = "host='localhost' user='postgres' dbname='Travelly' password=12345"
+    connStr = "host='localhost' user='postgres' dbname='Travelly' password=password"
     conn=psycopg2.connect(connStr) 
     return conn
 
@@ -224,6 +224,26 @@ def fetch_all_posts():
             "date": post[5]
         })
     return posts_array
+
+
+def insert_into_ip_ban(username, ip):
+    conn = getcon()
+    cur = conn.cursor()
+    cur.execute(search_path)
+    cur.execute("INSERT INTO ip_ban (ip_address,username,date) VALUES (%s,%s,NOW())", [ip,username])
+    conn.commit()
+    conn.close()
+
+def ip_ban_or_no_ip_ban(ip):
+    conn = getcon()
+    cur = conn.cursor()
+    cur.execute(search_path)
+    cur.execute("SELECT COUNT(*) FROM ip_ban WHERE ip_address = %s AND date >= now() - INTERVAL '1 minute'", [ip])
+    resp = cur.fetchone()[0]
+    if resp > 100:
+        return True
+    else:
+        return False
 
 def fetch_most_recent_user_posts(username):
     conn = getcon()
@@ -434,7 +454,6 @@ def return_counry_posts(country):
         return render_template('home.html', len = len(posts), posts = posts, create_form = False, home_buttons = True, fav_countries = countries, len_countries = len(countries) )
     else:
         return render_template('home.html', len = len(posts), posts = posts, fav_countries = countries, len_countries = len(countries))
-
   
 #### IF a user has logged in, they can view the most recent posts from any user in the application.
 @app.route('/user/<username>')
@@ -487,8 +506,8 @@ def get_login():
             resp.set_cookie('sessionID', sessionID)
             return resp
     else:
-        sessionID= createRandomId()
-        csrf_token= createRandomId()
+        sessionID = createRandomId()
+        csrf_token = createRandomId()
         expire = datetime.datetime.now() + datetime.timedelta(hours=0.5)
         sql= "INSERT into tr_session VALUES (%s, %s, %s, %s)"
         data = (sessionID,'NULL', expire, csrf_token,)
@@ -500,6 +519,7 @@ def get_login():
         resp = make_response(render_template('login.html', csrf_token= csrf_token))
         resp.set_cookie('sessionID', sessionID)
         return resp
+
 
 @app.route('/login', methods = ['POST'])
 def post_login():   
@@ -525,9 +545,14 @@ def post_login():
             conn.commit()
             check_account = cur.fetchone()[0]
             # if there is a result, the pw and username were correct 
+            if (ip_ban_or_no_ip_ban(request.environ.get('HTTP_X_REAL_IP', request.remote_addr))):
+                return render_template('login.html', check_input = 'IP BANNED', csrf_token= csrf_token)
+
             if (username_right_password_wrong(data['username'], user_input_password)):
                 cur.execute("INSERT INTO tr_lockout VALUES (%s, %s)", [data['username'], datetime.datetime.now()])
                 conn.commit()
+                insert_into_ip_ban(data['username'],request.environ.get('HTTP_X_REAL_IP', request.remote_addr))
+
             if (lockout_or_no_lockout(data['username'])):
                 return render_template('login.html', check_input = 'Your account has been temporarily locked out', csrf_token= csrf_token)
             
@@ -547,13 +572,13 @@ def post_login():
                 resp.set_cookie('sessionID', sessionID)
                 return resp
             else:
+                insert_into_ip_ban(data['username'],request.environ.get('HTTP_X_REAL_IP', request.remote_addr))
                 return render_template('login.html', check_input = 'Incorrect username or password', csrf_token= csrf_token)
         except Exception as e:
             print(e)
             return render_template('login.html', check_input = 'Something happened BAD!')
     else: 
         return render_template('login.html', check_input = 'CSRF tokens do not match.')
-
 
 @app.route('/signup', methods = ['GET','POST'])
 def signup_form():    

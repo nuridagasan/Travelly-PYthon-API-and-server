@@ -44,5 +44,10 @@ CREATE TABLE tr_comment (
 CREATE TABLE tr_lockout (
     username VARCHAR(50) NOT NULL,
     date TIMESTAMP NOT NULL
-)	
+);	
+CREATE TABLE ip_ban (
+    ip_address VARCHAR(50) NOT NULL,
+    username VARCHAR(50) NOT NULL,
+    date TIMESTAMP NOT NULL
+)
 

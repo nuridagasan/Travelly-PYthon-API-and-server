@@ -249,7 +249,7 @@ def ip_ban_or_no_ip_ban(ip):
     conn = getcon()
     cur = conn.cursor()
     cur.execute(search_path)
-    cur.execute("SELECT COUNT(*) FROM ip_ban WHERE ip_address = %s AND date >= now() - INTERVAL '1 minute'", [ip])
+    cur.execute("SELECT COUNT(*) FROM ip_ban WHERE ip_address = %s AND date >= now() - INTERVAL '30 minute'", [ip])
     resp = cur.fetchone()[0]
     if resp > 100:
         return True

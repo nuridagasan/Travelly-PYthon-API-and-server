@@ -42,17 +42,9 @@
             Search
           </a>
           <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-            <a class="dropdown-item" href="/home/singapore">Singapore</a>
-            <a class="dropdown-item" href="/home/france">France</a>
-            <a class="dropdown-item" href="/home/italy">Italy</a>
-            <a class="dropdown-item" href="/home/spain">Spain</a>
-            <a class="dropdown-item" href="/home/england">England</a>
-            <a class="dropdown-item" href="/home/turkey">Turkey</a>
-            <a class="dropdown-item" href="/home/germany">Germany</a>
-            <a class="dropdown-item" href="/home/netherlands">Netherlands</a>
-            <a class="dropdown-item" href="/home/finland">Finland</a>
-            <a class="dropdown-item" href="/home/norway">Norway</a>
-            <a class="dropdown-item" href="/home/sweden">Sweden</a>
+            {% for country in countries%}
+            <a class="dropdown-item" href="/home/{{country[0].replace(' ', '_')}}">{{country[0]}}</a>
+            {% endfor %}
         </li>
       </ul>
       {%if admin_btn %}
@@ -81,18 +73,9 @@
             <div class="form-group m-0">
               <label for="inputState">Choose Your Country</label>
               <select id="inputState" name="country" class="form-control">
-                <option selected>Singapore</option>
-                <option>France</option>
-                <option>Italy</option>
-                <option>Spain</option>
-                <option>England</option>
-                <option>Turkey</option>
-                <option>Germany</option>
-                <option>Netherlands</option>
-                <option>Netherlands</option>
-                <option>Finland</option>
-                <option>Norway</option>
-                <option>Sweden</option>
+                {% for country in countries %}
+                    <option>{{country[0]}}</option>
+                {% endfor %}
               </select>
             </div>
             <div class="form-group">

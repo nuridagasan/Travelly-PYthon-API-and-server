@@ -7,6 +7,7 @@ import sys
 import json
 import datetime
 import collections
+import re
 
 # so that we can implement csrf tokens, we need to create a session as soon as someone visits the login or create a post page (if they don't have one already). 
 # with GET request for each page, we can:
@@ -26,6 +27,9 @@ import collections
 
 # Look at checking to make sure session is still valid before carrying out actions- at the moment session is only removed at logout? 
 
+def delete_tags(string):
+    deleted = re.compile('<.*?>')
+    return re.sub(deleted, '', string)
 
 def escape(s):
     s = s.replace("&", "&amp;")
@@ -236,6 +240,13 @@ def fetch_all_posts():
         })
     return posts_array
 
+def fetch_banned_ip():
+    conn = getcon()
+    cur = conn.cursor()
+    cur.execute(search_path)
+    cur.execute("SELECT DISTINCT ip_address FROM ip_ban WHERE date >= now() - INTERVAL '30 minute'")
+    resp = cur.fetchall()
+    return resp
 
 def insert_into_ip_ban(username, ip):
     conn = getcon()
@@ -384,12 +395,21 @@ def page_not_found(e):
 def error_test():
     abort(404)
 
+def fetch_all_countries():
+    conn = getcon()
+    cur = conn.cursor()
+    cur.execute(search_path)
+    cur.execute("SELECT country FROM tr_post")
+    resp = cur.fetchall()
+    return resp
+
 @app.route('/home', methods = ['GET'])
 def home():
     home_buttons = False
     posts = fetch_all_posts()
     session = session_auth(request.cookies)
     countries = fetch_five_most_pop()
+    all_countries_with_posts = fetch_all_countries()
     if (session):
         sessionID = request.cookies.get('sessionID')
         csrf_token = createRandomId()
@@ -401,9 +421,9 @@ def home():
         cur.execute(sql,data)
         conn.commit()
         #private_user_information = get_user_information(sessionID)
-        return render_template('home.html', len = len(posts), posts = posts, create_form = True, home_buttons = True, fav_countries = countries, len_countries = len(countries), csrf_token= csrf_token, admin_btn=True if is_admin(get_username_from_session(request.cookies.get('sessionID'))) else False)
+        return render_template('home.html', countries = all_countries_with_posts, len = len(posts), posts = posts, create_form = True, home_buttons = True, fav_countries = countries, len_countries = len(countries), csrf_token= csrf_token, admin_btn=True if is_admin(get_username_from_session(request.cookies.get('sessionID'))) else False)
     else:
-        return render_template('home.html', len = len(posts), posts = posts, fav_countries = countries, len_countries = len(countries))
+        return render_template('home.html', countries = all_countries_with_posts, len = len(posts), posts = posts, fav_countries = countries, len_countries = len(countries))
 
 # Make a post - POST /createpost
 @app.route('/home', methods=['POST'])
@@ -419,12 +439,11 @@ def createpost():
             user_session = request.cookies.get('sessionID')
             # Useful data that can be accessed from the request object. Data sent as JSON for testing purposes
             input_data = {
-            'title': str(request.form['post-title'].lower()),
+            'title': delete_tags(str(request.form['post-title'].lower())),
             'country': str(request.form.get('country').lower()),
-            'content': str(request.form['post-content'].lower()),
+            'content': delete_tags(str(request.form['post-content'].lower())),
             'date': datetime.datetime.now()
             }
-
             # In order to completed the input_data object with the missing data needed to
             # insert the post, we can use the session to access the author of the post.
             input_data['author'] = get_username_from_session(user_session)
@@ -456,12 +475,14 @@ def logout():
 
 @app.route('/home/<country>')
 def return_counry_posts(country):
+    country = [word.capitalize() for word in escape(country).split('_')]
     session = session_auth(request.cookies)
     countries = fetch_five_most_pop()
+    all_countries_with_posts = fetch_all_countries()
     conn = getcon()
     cur = conn.cursor()
     cur.execute(search_path)
-    cur.execute("SELECT * FROM %s WHERE country=%s", [AsIs('tr_post'), escape(country)])
+    cur.execute("SELECT * FROM tr_post WHERE country=%s", [' '.join(country)])
     conn.commit()
     res = cur.fetchall()
     posts = []
@@ -477,9 +498,9 @@ def return_counry_posts(country):
         posts.append(post)
     if (session):
         sessionID = request.cookies.get('sessionID')
-        return render_template('home.html', len = len(posts), posts = posts, create_form = False, home_buttons = True, fav_countries = countries, len_countries = len(countries) )
+        return render_template('home.html', countries = all_countries_with_posts, len = len(posts), posts = posts, create_form = False, home_buttons = True, fav_countries = countries, len_countries = len(countries) )
     else:
-        return render_template('home.html', len = len(posts), posts = posts, fav_countries = countries, len_countries = len(countries))
+        return render_template('home.html', countries = all_countries_with_posts, len = len(posts), posts = posts, fav_countries = countries, len_countries = len(countries))
   
 #### IF a user has logged in, they can view the most recent posts from any user in the application.
 @app.route('/user/<username>')
@@ -697,9 +718,25 @@ def admin_page():
     if (session_is_admin(request.cookies)):
         list_of_users = fetch_users()
         user_posts = fetch_all_posts()
-        return render_template('admin.html', users = list_of_users, posts = user_posts)
+        banned_ips = fetch_banned_ip()
+        return render_template('admin.html', users = list_of_users, posts = user_posts, banned_ips = banned_ips)
     else:
         return render_template('notfound.html')
+
+@app.route('/api/unbanip', methods=['POST'])
+def unban_ip():
+    print('ran')
+    sessionID = request.cookies.get('sessionID')
+    ip_to_unban = request.json['ip']
+    if (sessionID and is_admin(get_username_from_session(sessionID))):
+        conn = getcon()
+        cur = conn.cursor()
+        cur.execute(search_path)
+        cur.execute("DELETE FROM ip_ban WHERE ip_address = %s", [ip_to_unban])
+        conn.commit()
+        return
+    else:
+        return
 
 def insert_user(data):
     try:

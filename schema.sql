@@ -8,7 +8,9 @@ CREATE TABLE tr_users (
     email        VARCHAR(256) NOT NULL UNIQUE,
     dob          DATE NOT NULL,
     admin        BOOLEAN NOT NULL DEFAULT False,
-    password 	 VARCHAR(64) NOT NULL,	
+    password 	 VARCHAR(100) NOT NULL,
+    recoveryquestion VARCHAR(100) NOT NULL,
+    recoveryanswer 	 VARCHAR(100) NOT NULL,	
     salt         VARCHAR(64) NOT NULL,
 		 CONSTRAINT user_pk PRIMARY KEY (username));
 

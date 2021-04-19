@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, url_for, jsonify, redirect, session, render_template, make_response, redirect, render_template
+from flask import Flask, jsonify, request, url_for, jsonify, redirect, session, render_template, make_response, redirect, render_template, abort
 import re
 import random
 from psycopg2.extensions import AsIs
@@ -26,6 +26,7 @@ import collections
 
 # Look at checking to make sure session is still valid before carrying out actions- at the moment session is only removed at logout? 
 
+
 def escape(s):
     s = s.replace("&", "&amp;")
     s= s.replace("<", "&lt;")
@@ -33,6 +34,16 @@ def escape(s):
     s= s.replace("\"", "&quot;")
     s= s.replace("'", "&#x27;")
     s= s.replace("@", "&commat;")
+    s= s.replace("=","&equals;")
+    s= s.replace("`","&grave;")
+    return s 
+
+def escape_email(s):
+    s = s.replace("&", "&amp;")
+    s= s.replace("<", "&lt;")
+    s = s.replace(">", "&gt;")
+    s= s.replace("\"", "&quot;")
+    s= s.replace("'", "&#x27;")
     s= s.replace("=","&equals;")
     s= s.replace("`","&grave;")
     return s 
@@ -362,6 +373,16 @@ def session_is_admin(cookies):
             return True
     else:
         return False
+
+@app.errorhandler(404)
+def page_not_found(e):
+    # note that we set the 404 status explicitly
+    return render_template('notfound.html'), 404
+
+@app.route('/notfound')
+def error_test():
+    abort(404)
+
 @app.route('/home', methods = ['GET'])
 def home():
     home_buttons = False
@@ -417,7 +438,11 @@ def createpost():
 
 @app.route('/logout', methods=['GET'])
 def logout():
-    session = request.cookies['sessionID']
+    try:
+        session = request.cookies['sessionID']
+    except: 
+        return redirect(url_for('get_login'))
+
     if (session and request.method == 'GET'):
         conn = getcon()
         cur = conn.cursor()
@@ -435,7 +460,7 @@ def return_counry_posts(country):
     conn = getcon()
     cur = conn.cursor()
     cur.execute(search_path)
-    cur.execute("SELECT * FROM %s WHERE country=%s", [AsIs('tr_post'), country])
+    cur.execute("SELECT * FROM %s WHERE country=%s", [AsIs('tr_post'), escape(country)])
     conn.commit()
     res = cur.fetchall()
     posts = []
@@ -601,6 +626,8 @@ def signup_form():
             'email' : request.form['email'].lower(),
             'dob' : request.form['birthdate'],
             'password' : request.form['password'],
+            'recovery_question' : request.form['recovery-question'],
+            'recovery_answer': request.form['recovery-answer'],
             'salt' : pw_salt()
         }
         #print(user_sign_up)
@@ -610,15 +637,13 @@ def signup_form():
         if check_input == True:
             #hash and salt password before sending it to database
             user_sign_up['password'] = pw_hash_salt(user_sign_up['password'],user_sign_up['salt'])
+            user_sign_up['recovery_answer'] = pw_hash_salt(user_sign_up['recovery_answer'],user_sign_up['salt'])
             #insert user details to database. It returns a message whether the user is successfully
             #inserted or not
-            return render_template('signup.html', check_input = insert_user(user_sign_up))
+            return render_template('signup.html' , check_input = insert_user(user_sign_up))
         else:
             #Give error message to user
             return render_template('signup.html', check_input = check_input)
-
-
-
 
 @app.route('/api/deletepost', methods=['POST'])
 def delete_post():
@@ -671,7 +696,7 @@ def admin_page():
         user_posts = fetch_all_posts()
         return render_template('admin.html', users = list_of_users, posts = user_posts)
     else:
-        return redirect('login')
+        return render_template('notfound.html')
 
 def insert_user(data):
     try:
@@ -680,10 +705,11 @@ def insert_user(data):
         username = escape(data['username'])
         firstname = escape(data['firstname'])
         lastname = escape(data['lastname'])
-        email = escape(data['email'])
+        email = escape_email(data['email'])
+        recovery_answer = escape(data['recovery_answer'])
         sql = """SET SEARCH_PATH TO travelly;
-                    INSERT INTO tr_users (username, firstname,lastname, email, dob, password, salt) VALUES (%s,%s,%s,%s,%s,%s,%s);"""
-        data = (username,firstname, lastname, email, data['dob'], data['password'], data['salt'])
+                    INSERT INTO tr_users (username, firstname, lastname, email, dob, password, recoveryquestion, recoveryanswer, salt) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s);"""
+        data = (username,firstname, lastname, email, data['dob'], data['password'], data['recovery_question'], recovery_answer, data['salt'])
         cur.execute(sql,data)
         conn.commit()
         return 'Your account is successfully created!'
@@ -702,6 +728,8 @@ def input_validation(user_sign_up):
         return "Check your password again."
     elif (user_sign_up['firstname'].lower() in user_sign_up['password'].lower()) or (user_sign_up['lastname'].lower() in user_sign_up['password'].lower()):
         return "Your password must not include your name or surname."
+    elif not bool(re.fullmatch('[A-Za-z]{2,25}( [A-Za-z]{2,25})?', user_sign_up['recovery_answer'])):  
+        return "Account recovery answer must include only letters." 
     else:
         return True
 

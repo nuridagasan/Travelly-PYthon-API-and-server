@@ -444,9 +444,6 @@ def error_test():
     abort(404)
 
 
-
-@app.route('/home', methods=['GET'])
-
 def fetch_all_countries():
     conn = getcon()
     cur = conn.cursor()
@@ -834,7 +831,6 @@ def change_account_password():
             return render_template('accountrecovery.html', password_form=True, check_input="Please, check your username or answer again!")
     else:
         return render_template('accountrecovery.html', password_form=True, check_input="Please, check your username or answer again!")
-
 
 def is_valid_password(user_data, password):
     firstname = user_data[0][1]

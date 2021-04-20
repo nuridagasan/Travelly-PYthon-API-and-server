@@ -855,7 +855,6 @@ def insert_user(data):
         #err_resp = error_handler(e)
         return 'Username or email already exists! Please, try again.'
 
-
 def input_validation(user_sign_up):
     if not bool(re.fullmatch('[A-Za-z]{2,25}( [A-Za-z]{2,25})?', user_sign_up['firstname'])):
         return "Your name is invalid. Please, type it again."

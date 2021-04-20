@@ -12,6 +12,7 @@ CREATE TABLE tr_users (
     recoveryquestion VARCHAR(100) NOT NULL,
     recoveryanswer 	 VARCHAR(100) NOT NULL,	
     salt         VARCHAR(64) NOT NULL,
+    r_salt         VARCHAR(64) NOT NULL,
 		 CONSTRAINT user_pk PRIMARY KEY (username));
 
 CREATE TABLE tr_session (

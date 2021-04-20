@@ -21,7 +21,7 @@
   <title>Home</title>
 </head>
 
-<body>
+<body  class="bg-image">
   <nav class="navbar navbar-expand-lg navbar-light bg-light pb-3" id="navbar-bg">
     <a class="navbar-brand" href="#">
       <img src="{{url_for('static', filename='world.png')}}" width="75" height="75" alt="">
@@ -60,7 +60,7 @@
       {% endif %}
     </div>
   </nav>
-  <div class="bg-image">
+  <div>
     <div class="container">
       <div class="row justify-content-md-center">
         {% if create_form %}

@@ -70,7 +70,7 @@ app.config['SECRET_KEY'] = 'Thisisasecret!'
 
 
 def getcon():
-    connStr = "host='localhost' user='postgres' dbname='Travelly' password=password"
+    connStr = "host='localhost' user='postgres' dbname='Travelly' password=12345"
     conn=psycopg2.connect(connStr) 
     return conn
 
@@ -708,7 +708,7 @@ def post_login():
 
 
 @app.route('/signup', methods = ['GET','POST'])
-def signup_form():    
+def signup_form():
     if request.method == 'GET':
         session_exists = session_auth_not_loggedin(request.cookies)
         if session_exists:
@@ -717,7 +717,7 @@ def signup_form():
             if username != 'NULL':
                 return redirect(url_for('home'))
             else:
-                return render_template('signup.html')
+                return render_template('signup.html', name = "", surname = "", username = "", email = "", dob = "", r_answer = "")
         else:
             return render_template('signup.html')
     else:
@@ -745,10 +745,14 @@ def signup_form():
                 user_sign_up['recovery_answer'], user_sign_up['r_salt'])
             # insert user details to database. It returns a message whether the user is successfully
             # inserted or not
-            return render_template('signup.html', check_input=insert_user(user_sign_up))
+            return render_template('signup.html', name = "", surname = "", username = "", email = "", dob = "", r_answer = "", check_input=insert_user(user_sign_up))
         else:
             # Give error message to user
-            return render_template('signup.html', check_input=check_input)
+            return render_template('signup.html',
+            name = user_sign_up['firstname'], surname = user_sign_up['lastname'],
+            username = user_sign_up['username'], email = user_sign_up['email'],
+            dob = user_sign_up['dob'], r_answer = user_sign_up['recovery_answer'],
+            check_input=check_input )
 
 
 @app.route('/api/deletepost', methods=['POST'])

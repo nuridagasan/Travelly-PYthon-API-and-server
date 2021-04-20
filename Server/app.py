@@ -807,7 +807,6 @@ def check_username(user_name):
     res = cur.fetchall()
     return res
 
-
 def update_password(username, password, salt):
     conn = getcon()
     cur = conn.cursor()
@@ -827,7 +826,6 @@ def fetch_users():
     res = cur.fetchall()
     return res
 
-
 @app.route('/admin', methods=['GET'])
 def admin_page():
     if (session_is_admin(request.cookies)):
@@ -836,7 +834,6 @@ def admin_page():
         return render_template('admin.html', users=list_of_users, posts=user_posts)
     else:
         return render_template('notfound.html')
-
 
 def insert_user(data):
     try:

@@ -9,6 +9,9 @@ import datetime
 import collections
 import re
 
+
+
+
 # so that we can implement csrf tokens, we need to create a session as soon as someone visits the login or create a post page (if they don't have one already).
 # with GET request for each page, we can:
 
@@ -317,7 +320,6 @@ def fetch_most_recent_user_posts(username):
         })
     return posts_array
 
-
 def fetch_individual_post(id):
     conn = getcon()
     cur = conn.cursor()
@@ -432,6 +434,11 @@ def session_is_admin(cookies):
     else:
         return False
 
+@app.after_request
+def cookies(response):
+    response.set_cookie('same-site-cookie', createRandomId(), samesite='Lax');
+    response.set_cookie('cross-site-cookie', createRandomId(), samesite='None', secure=True);
+    return response
 
 @app.errorhandler(404)
 def page_not_found(e):
@@ -453,7 +460,6 @@ def fetch_all_countries():
     return resp
 
 @app.route('/home', methods = ['GET'])
-
 def home():
     home_buttons = False
     posts = fetch_all_posts()

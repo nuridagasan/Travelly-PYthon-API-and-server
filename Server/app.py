@@ -948,7 +948,6 @@ def unban_ip():
     else:
         return
 
-
 def insert_user(data):
     try:
         conn = getcon()

@@ -765,7 +765,6 @@ def signup_form():
                                    dob=user_sign_up['dob'], r_answer=user_sign_up['recovery_answer'],
                                    check_input=check_input)
 
-
 @app.route('/api/deletepost', methods=['POST'])
 def delete_post():
     #session = session_auth(request.cookies)

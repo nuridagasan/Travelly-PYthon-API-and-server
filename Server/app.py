@@ -744,6 +744,7 @@ def signup_form():
             'salt': pw_salt(),
             'r_salt': pw_salt()
         }
+        r_answer = user_sign_up['recovery_answer']
         # print(user_sign_up)
         # first check user inputs are valid firstname, lastname, username, email and password
         check_input = input_validation(user_sign_up)
@@ -756,7 +757,10 @@ def signup_form():
                 user_sign_up['recovery_answer'], user_sign_up['r_salt'])
             # insert user details to database. It returns a message whether the user is successfully
             # inserted or not
-            return render_template('signup.html', name="", surname="", username="", email="", dob="", r_answer="", check_input=insert_user(user_sign_up))
+            return render_template('signup.html', name=user_sign_up['firstname'], surname=user_sign_up['lastname'],
+                                   username=user_sign_up['username'], email=user_sign_up['email'],
+                                   dob=user_sign_up['dob'], r_answer=r_answer,
+                                   check_input=insert_user(user_sign_up))
         else:
             # Give error message to user
             return render_template('signup.html',
@@ -764,6 +768,7 @@ def signup_form():
                                    username=user_sign_up['username'], email=user_sign_up['email'],
                                    dob=user_sign_up['dob'], r_answer=user_sign_up['recovery_answer'],
                                    check_input=check_input)
+
 
 @app.route('/api/deletepost', methods=['POST'])
 def delete_post():

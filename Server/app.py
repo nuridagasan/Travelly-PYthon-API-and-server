@@ -465,15 +465,13 @@ def fetch_all_countries():
     return resp
 
 
-<<<<<<< HEAD
+
 @app.route('/', methods = ['GET'])
 def default_home():
     return redirect(url_for('home')), 200
 
-@app.route('/home', methods = ['GET'])
-=======
+
 @app.route('/home', methods=['GET'])
->>>>>>> 92a4b5f7fa4bf79be7bd7f17b7965b8495bd798a
 def home():
     home_buttons = False
     posts = fetch_all_posts()

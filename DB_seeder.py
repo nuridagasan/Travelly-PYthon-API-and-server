@@ -123,15 +123,32 @@ COUNTRIES=[
 'Namibia'] 
 security_questions = ["What is your mother's maiden name?", "What is the name of your first pet?", "What was your first car?", "What elementary school did you attend?", "What is the name of the town where you were born?"]
 
+post_titles = ['Decent', 'alright', 'cool', 'HOT!', 'Not for me']
+post_content = ['Great holiday', 'Not too shabby', 'Never knew it was like that over there!', 'Got arrested :(', 'They dont tell you about the corruption']
+
+
+def createRandomId():
+    random_digits = 'abcdefghijklmnopABCDEFGHIJKLMNOP123456789'
+    sess_id = ''
+    i = 0
+
+    while i <= 10:
+        random_digit = random.choice(random_digits)
+        sess_id += random_digit
+        i += 1
+
+    return sess_id
+
+
 def create_schema(cur):
     cur.execute(open("schema.sql", "r").read())
 
 def create_user(name):
-    salt = 12345
+    salt = createRandomId()
     r_salt = 12345
     question = random.choice(security_questions)
-    answer = 'temp answer'
-    password=pw_hash_salt('password', salt)
+    answer = createRandomId()
+    password=pw_hash_salt(createRandomId(), salt)
     username = name.split()[0].lower() + '999'
     email = '%s.%s@email.com'%(name.split()[0][1].lower(), name.split()[1].lower())
     firstname= name.split()[0]
@@ -141,8 +158,8 @@ def create_user(name):
 
  
 def create_post(author, country):
-    content = 'Content for this post'
-    title = 'post about %s'%(country)
+    content = random.choice(post_content)
+    title = random.choice(post_titles)
     date = datetime.datetime(2021,1,4) + random.random() * datetime.timedelta(days=1)
     #date = datetime.date.today().replace(day=1, month=1) + datetime.timedelta(days=random.randint(0, 20))
     return [title, country, author, content, date]
@@ -166,9 +183,18 @@ try:
     
     for user in USERS:
         cur.execute("INSERT INTO tr_users (username,firstname,lastname,email,dob,password,recoveryquestion,recoveryanswer,salt,r_salt) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)", create_user(user))
+    
     cur.execute("INSERT INTO tr_users (username,firstname,lastname,email,dob,admin,password,recoveryquestion,recoveryanswer,salt,r_salt) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)", ['tradmin','admin','admin','admin@admin.com','01/01/1900','true',pw_hash_salt('bubblebath', 12345),security_questions[0], 'temp answer',12345,12345])
     cur.execute("SELECT username FROM tr_users")
     users = cur.fetchall()
+    
+    for country in COUNTRIES:
+        user = random.choice(users)
+        cur.execute("INSERT INTO tr_post (title, country, author, content, date) VALUES (%s,%s,%s,%s,%s)", create_post(user, country))
+    
+    for country in COUNTRIES:
+        user = random.choice(users)
+        cur.execute("INSERT INTO tr_post (title, country, author, content, date) VALUES (%s,%s,%s,%s,%s)", create_post(user, country))
     
     for country in COUNTRIES:
         user = random.choice(users)

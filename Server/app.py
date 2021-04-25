@@ -70,7 +70,7 @@ app.config['SECRET_KEY'] = 'Thisisasecret!'
 
 
 def getcon():
-    connStr = "host='localhost' user='postgres' dbname='Travelly' password=12345"
+    connStr = "host='localhost' user='postgres' dbname='Travelly' password=password"
     conn=psycopg2.connect(connStr) 
     return conn
 
@@ -452,8 +452,12 @@ def fetch_all_countries():
     resp = cur.fetchall()
     return resp
 
-@app.route('/home', methods = ['GET'])
 
+@app.route('/', methods = ['GET'])
+def default_home():
+    return redirect(url_for('home')), 200
+
+@app.route('/home', methods = ['GET'])
 def home():
     home_buttons = False
     posts = fetch_all_posts()
@@ -761,6 +765,7 @@ def delete_post():
     pid = request.json['pid']
     # Check that username from session is equal to username of the post
     sessionID = request.cookies.get('sessionID')
+    resp = make_response('unauthorised', 401)
     if (sessionID != None and session_auth(request.cookies)):
         username_from_session = get_username_from_session(sessionID)
         username_from_pid = get_username_from_pid(pid)
@@ -770,11 +775,12 @@ def delete_post():
             cur.execute(search_path)
             cur.execute("DELETE FROM tr_post WHERE pid=%s", [pid])
             conn.commit()
-            return
+            resp = make_response('added', 201)
+            return resp
         else:
-            return
-        return
-    return
+            return resp
+        return resp
+    return resp
 
 
 @app.route('/api/deleteuser', methods=['POST'])
@@ -815,7 +821,7 @@ def post_account_recover():
 def change_account_password():
     user_change_password = {
         'username': escape(request.form['username'].lower()),
-        'recovery-answer':  escape(request.form['recovery-answer'].lower()),
+        'recovery-answer':  escape(request.form['recovery-answer']),
         'new_password': request.form['password'],
         'salt': pw_salt()
     }

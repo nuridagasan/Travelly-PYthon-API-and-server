@@ -8,6 +8,7 @@ import json
 import datetime
 import collections
 import re
+import os
 
 
 # so that we can implement csrf tokens, we need to create a session as soon as someone visits the login or create a post page (if they don't have one already).
@@ -69,16 +70,15 @@ app.config['SECRET_KEY'] = 'Thisisasecret!'
 #    random_digit = random.choice(random_digits)
 #   sess_id += random_digit
 # return sess_id
-
+dirname = os.path.dirname(__file__)
+filename = os.path.join(dirname, '..\password.txt')
+f = open(filename, "r")
+password = f.readline()
+f.close()
 
 def getcon():
-<<<<<<< HEAD
-    connStr = "host='localhost' user='postgres' dbname='Travelly' password=password"
+    connStr = "host='localhost' user='postgres' dbname='Travelly' password=" + password
     conn=psycopg2.connect(connStr) 
-=======
-    connStr = "host='localhost' user='postgres' dbname='Travelly' password=12345"
-    conn = psycopg2.connect(connStr)
->>>>>>> 92a4b5f7fa4bf79be7bd7f17b7965b8495bd798a
     return conn
 
 

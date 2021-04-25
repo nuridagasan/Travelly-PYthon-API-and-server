@@ -184,7 +184,7 @@ try:
     for user in USERS:
         cur.execute("INSERT INTO tr_users (username,firstname,lastname,email,dob,password,recoveryquestion,recoveryanswer,salt,r_salt) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)", create_user(user))
     
-    cur.execute("INSERT INTO tr_users (username,firstname,lastname,email,dob,admin,password,recoveryquestion,recoveryanswer,salt,r_salt) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)", ['tradmin','admin','admin','admin@admin.com','01/01/1900','true',pw_hash_salt('bubblebath', 12345),security_questions[0], 'temp answer',12345,12345])
+    cur.execute("INSERT INTO tr_users (username,firstname,lastname,email,dob,admin,password,recoveryquestion,recoveryanswer,salt,r_salt) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)", ['tradmin','admin','admin','admin@admin.com','01/01/1900','true',pw_hash_salt('bubblebath', 126212626212),security_questions[0], '45463465476756765876861',126212626212,12345])
     cur.execute("SELECT username FROM tr_users")
     users = cur.fetchall()
     
@@ -203,6 +203,6 @@ try:
     conn.commit()
     conn.close()
 
-
+    print('DB POPULATED')
 except Exception as e:
     print (e)

@@ -9,6 +9,7 @@ import datetime
 import collections
 import re
 
+
 # so that we can implement csrf tokens, we need to create a session as soon as someone visits the login or create a post page (if they don't have one already).
 # with GET request for each page, we can:
 
@@ -30,6 +31,7 @@ import re
 def delete_tags(string):
     deleted = re.compile('<.*?>')
     return re.sub(deleted, '', string)
+
 
 def escape(s):
     s = s.replace("&", "&amp;")
@@ -70,8 +72,13 @@ app.config['SECRET_KEY'] = 'Thisisasecret!'
 
 
 def getcon():
+<<<<<<< HEAD
     connStr = "host='localhost' user='postgres' dbname='Travelly' password=password"
     conn=psycopg2.connect(connStr) 
+=======
+    connStr = "host='localhost' user='postgres' dbname='Travelly' password=12345"
+    conn = psycopg2.connect(connStr)
+>>>>>>> 92a4b5f7fa4bf79be7bd7f17b7965b8495bd798a
     return conn
 
 
@@ -274,23 +281,28 @@ def fetch_banned_ip():
     conn = getcon()
     cur = conn.cursor()
     cur.execute(search_path)
-    cur.execute("SELECT DISTINCT ip_address FROM ip_ban WHERE date >= now() - INTERVAL '30 minute'")
+    cur.execute(
+        "SELECT DISTINCT ip_address FROM ip_ban WHERE date >= now() - INTERVAL '30 minute'")
     resp = cur.fetchall()
     return resp
+
 
 def insert_into_ip_ban(username, ip):
     conn = getcon()
     cur = conn.cursor()
     cur.execute(search_path)
-    cur.execute("INSERT INTO ip_ban (ip_address,username,date) VALUES (%s,%s,NOW())", [ip,username])
+    cur.execute("INSERT INTO ip_ban (ip_address,username,date) VALUES (%s,%s,NOW())", [
+                ip, username])
     conn.commit()
     conn.close()
+
 
 def ip_ban_or_no_ip_ban(ip):
     conn = getcon()
     cur = conn.cursor()
     cur.execute(search_path)
-    cur.execute("SELECT COUNT(*) FROM ip_ban WHERE ip_address = %s AND date >= now() - INTERVAL '30 minute'", [ip])
+    cur.execute(
+        "SELECT COUNT(*) FROM ip_ban WHERE ip_address = %s AND date >= now() - INTERVAL '30 minute'", [ip])
     resp = cur.fetchone()[0]
     if resp > 100:
         return True
@@ -453,11 +465,15 @@ def fetch_all_countries():
     return resp
 
 
+<<<<<<< HEAD
 @app.route('/', methods = ['GET'])
 def default_home():
     return redirect(url_for('home')), 200
 
 @app.route('/home', methods = ['GET'])
+=======
+@app.route('/home', methods=['GET'])
+>>>>>>> 92a4b5f7fa4bf79be7bd7f17b7965b8495bd798a
 def home():
     home_buttons = False
     posts = fetch_all_posts()
@@ -475,9 +491,9 @@ def home():
         cur.execute(sql, data)
         conn.commit()
         #private_user_information = get_user_information(sessionID)
-        return render_template('home.html', countries = all_countries_with_posts, len = len(posts), posts = posts, create_form = True, home_buttons = True, fav_countries = countries, len_countries = len(countries), csrf_token= csrf_token, admin_btn=True if is_admin(get_username_from_session(request.cookies.get('sessionID'))) else False)
+        return render_template('home.html', countries=all_countries_with_posts, len=len(posts), posts=posts, create_form=True, home_buttons=True, fav_countries=countries, len_countries=len(countries), csrf_token=csrf_token, admin_btn=True if is_admin(get_username_from_session(request.cookies.get('sessionID'))) else False)
     else:
-        return render_template('home.html', countries = all_countries_with_posts, len = len(posts), posts = posts, fav_countries = countries, len_countries = len(countries))
+        return render_template('home.html', countries=all_countries_with_posts, len=len(posts), posts=posts, fav_countries=countries, len_countries=len(countries))
 
 
 # Make a post - POST /createpost
@@ -497,10 +513,10 @@ def createpost():
             # Useful data that can be accessed from the request object. Data sent as JSON for testing purposes
             input_data = {
 
-            'title': delete_tags(str(request.form['post-title'].lower())),
-            'country': str(request.form.get('country').lower()),
-            'content': delete_tags(str(request.form['post-content'].lower())),
-            'date': datetime.datetime.now()
+                'title': delete_tags(str(request.form['post-title'].lower())),
+                'country': str(request.form.get('country').lower()),
+                'content': delete_tags(str(request.form['post-content'].lower())),
+                'date': datetime.datetime.now()
 
             }
             # In order to completed the input_data object with the missing data needed to
@@ -562,11 +578,12 @@ def return_counry_posts(country):
         posts.append(post)
     if (session):
         sessionID = request.cookies.get('sessionID')
-        return render_template('home.html', countries = all_countries_with_posts, len = len(posts), posts = posts, create_form = False, home_buttons = True, fav_countries = countries, len_countries = len(countries) )
+        return render_template('home.html', countries=all_countries_with_posts, len=len(posts), posts=posts, create_form=False, home_buttons=True, fav_countries=countries, len_countries=len(countries))
     else:
-        return render_template('home.html', countries = all_countries_with_posts, len = len(posts), posts = posts, fav_countries = countries, len_countries = len(countries))
-  
-#### IF a user has logged in, they can view the most recent posts from any user in the application.
+        return render_template('home.html', countries=all_countries_with_posts, len=len(posts), posts=posts, fav_countries=countries, len_countries=len(countries))
+
+# IF a user has logged in, they can view the most recent posts from any user in the application.
+
 
 @app.route('/user/<username>')
 def user_page(username):
@@ -640,11 +657,10 @@ def get_login():
         return resp
 
 
-
-@app.route('/login', methods = ['POST'])
-def post_login():   
-    # get csrf token from form and check it against the one in the db for this session ID 
-    # if match proceed, if not block. 
+@app.route('/login', methods=['POST'])
+def post_login():
+    # get csrf token from form and check it against the one in the db for this session ID
+    # if match proceed, if not block.
     user_csrf_token = request.form['csrf_token'].strip("/")
     sessionID = request.cookies.get('sessionID')
     csrf_token = get_csrf_token(sessionID)
@@ -667,17 +683,19 @@ def post_login():
             conn.commit()
             check_account = cur.fetchone()[0]
 
-            # if there is a result, the pw and username were correct 
+            # if there is a result, the pw and username were correct
             print(request.environ.get('HTTP_X_REAL_IP', request.remote_addr))
-            print(ip_ban_or_no_ip_ban(request.environ.get('HTTP_X_REAL_IP', request.remote_addr)))
+            print(ip_ban_or_no_ip_ban(request.environ.get(
+                'HTTP_X_REAL_IP', request.remote_addr)))
             if (ip_ban_or_no_ip_ban(request.environ.get('HTTP_X_REAL_IP', request.remote_addr))):
-                return render_template('login.html', check_input = 'IP BANNED', csrf_token= csrf_token)
+                return render_template('login.html', check_input='IP BANNED', csrf_token=csrf_token)
 
             if (username_right_password_wrong(data['username'], user_input_password)):
                 cur.execute("INSERT INTO tr_lockout VALUES (%s, %s)", [
                             data['username'], datetime.datetime.now()])
                 conn.commit()
-                insert_into_ip_ban(data['username'],request.environ.get('HTTP_X_REAL_IP', request.remote_addr))
+                insert_into_ip_ban(data['username'], request.environ.get(
+                    'HTTP_X_REAL_IP', request.remote_addr))
 
             if (lockout_or_no_lockout(data['username'])):
                 return render_template('login.html', check_input='Your account has been temporarily locked out', csrf_token=csrf_token)
@@ -698,11 +716,13 @@ def post_login():
                             AsIs('tr_session'), sessionID, data['username'], str(expire)])
                 conn.commit()
                 resp = make_response(redirect('/home'))
-                resp.set_cookie('sessionID', sessionID)
+                resp.set_cookie('sessionID', sessionID,
+                                samesite='Lax', httponly=True)
                 return resp
             else:
-                insert_into_ip_ban(data['username'],request.environ.get('HTTP_X_REAL_IP', request.remote_addr))
-                return render_template('login.html', check_input = 'Incorrect username or password', csrf_token= csrf_token)
+                insert_into_ip_ban(data['username'], request.environ.get(
+                    'HTTP_X_REAL_IP', request.remote_addr))
+                return render_template('login.html', check_input='Incorrect username or password', csrf_token=csrf_token)
 
         except Exception as e:
             print(e)
@@ -711,7 +731,7 @@ def post_login():
         return render_template('login.html', check_input='CSRF tokens do not match.')
 
 
-@app.route('/signup', methods = ['GET','POST'])
+@app.route('/signup', methods=['GET', 'POST'])
 def signup_form():
     if request.method == 'GET':
         session_exists = session_auth_not_loggedin(request.cookies)
@@ -721,7 +741,7 @@ def signup_form():
             if username != 'NULL':
                 return redirect(url_for('home'))
             else:
-                return render_template('signup.html', name = "", surname = "", username = "", email = "", dob = "", r_answer = "")
+                return render_template('signup.html', name="", surname="", username="", email="", dob="", r_answer="")
         else:
             return render_template('signup.html')
     else:
@@ -749,15 +769,14 @@ def signup_form():
                 user_sign_up['recovery_answer'], user_sign_up['r_salt'])
             # insert user details to database. It returns a message whether the user is successfully
             # inserted or not
-            return render_template('signup.html', name = "", surname = "", username = "", email = "", dob = "", r_answer = "", check_input=insert_user(user_sign_up))
+            return render_template('signup.html', name="", surname="", username="", email="", dob="", r_answer="", check_input=insert_user(user_sign_up))
         else:
             # Give error message to user
             return render_template('signup.html',
-            name = user_sign_up['firstname'], surname = user_sign_up['lastname'],
-            username = user_sign_up['username'], email = user_sign_up['email'],
-            dob = user_sign_up['dob'], r_answer = user_sign_up['recovery_answer'],
-            check_input=check_input )
-
+                                   name=user_sign_up['firstname'], surname=user_sign_up['lastname'],
+                                   username=user_sign_up['username'], email=user_sign_up['email'],
+                                   dob=user_sign_up['dob'], r_answer=user_sign_up['recovery_answer'],
+                                   check_input=check_input)
 
 @app.route('/api/deletepost', methods=['POST'])
 def delete_post():
@@ -803,6 +822,7 @@ def del_user():
 def get_account_recover():
     return render_template('accountrecovery.html', recovery_form=True, question_form=False, password_form=False)
 
+
 @app.route('/recoveryquestion', methods=['POST'])
 def post_account_recover():
 
@@ -816,6 +836,7 @@ def post_account_recover():
         return render_template('accountrecovery.html', recovery_form=False, password_form=True, recovery_question=recovery_question)
     else:
         return render_template('accountrecovery.html', recovery_form=True, check_input="Please, check your credentials again!")
+
 
 @app.route('/changepassword', methods=['POST'])
 def change_account_password():
@@ -834,13 +855,15 @@ def change_account_password():
             user_change_password['recovery-answer'], recovery_answer_salt)
         if user_input_salted_answer == recovery_answer and is_valid_password(user_credentials, user_change_password['new_password']):
             username = user_credentials[0][0]
-            salted_pw = pw_hash_salt(user_change_password['new_password'], user_change_password['salt'])
+            salted_pw = pw_hash_salt(
+                user_change_password['new_password'], user_change_password['salt'])
             update_password(username, salted_pw, user_change_password['salt'])
             return render_template('accountrecovery.html', password_form=False, validated_password=True)
         else:
             return render_template('accountrecovery.html', password_form=True, check_input="Please, check your username or answer again!")
     else:
         return render_template('accountrecovery.html', password_form=True, check_input="Please, check your username or answer again!")
+
 
 def is_valid_password(user_data, password):
     firstname = user_data[0][1]
@@ -875,6 +898,7 @@ def check_username(user_name):
     res = cur.fetchall()
     return res
 
+
 def update_password(username, password, salt):
     conn = getcon()
     cur = conn.cursor()
@@ -894,15 +918,17 @@ def fetch_users():
     res = cur.fetchall()
     return res
 
+
 @app.route('/admin', methods=['GET'])
 def admin_page():
     if (session_is_admin(request.cookies)):
         list_of_users = fetch_users()
         user_posts = fetch_all_posts()
         banned_ips = fetch_banned_ip()
-        return render_template('admin.html', users = list_of_users, posts = user_posts, banned_ips = banned_ips)
+        return render_template('admin.html', users=list_of_users, posts=user_posts, banned_ips=banned_ips)
     else:
         return render_template('notfound.html')
+
 
 @app.route('/api/unbanip', methods=['POST'])
 def unban_ip():
@@ -918,6 +944,7 @@ def unban_ip():
         return
     else:
         return
+
 
 def insert_user(data):
     try:
@@ -938,6 +965,7 @@ def insert_user(data):
     except psycopg2.IntegrityError as e:
         #err_resp = error_handler(e)
         return 'Username or email already exists! Please, try again.'
+
 
 def input_validation(user_sign_up):
     if not bool(re.fullmatch('[A-Za-z]{2,25}( [A-Za-z]{2,25})?', user_sign_up['firstname'])):

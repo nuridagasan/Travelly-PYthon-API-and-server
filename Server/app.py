@@ -848,7 +848,6 @@ def post_account_recover():
     else:
         return render_template('accountrecovery.html', recovery_form=True, check_input="Please, check your credentials again!")
 
-
 @app.route('/changepassword', methods=['POST'])
 def change_account_password():
     user_change_password = {
